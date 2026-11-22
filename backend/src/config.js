@@ -17,7 +17,7 @@ export const config = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  emailFrom: process.env.EMAIL_FROM ?? "Flowty <no-reply@flowty.dev>",
+  emailFrom: process.env.EMAIL_FROM ?? "TeamSync <no-reply@teamsync.dev>",
 };
 
 if (!config.jwtSecret) {

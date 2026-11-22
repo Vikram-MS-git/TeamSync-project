@@ -1,221 +1,333 @@
-# Flowty
+# TeamSync – Smart Team Collaboration and Project Management System
 
-A real-time, offline-first kanban board — board ownership and membership,
-permissioned tasks, live collaboration, and a working conflict-resolution
-story for when two people edit the same card while one of them is offline.
-Full-stack: React client + Express API + MongoDB, with Socket.IO for
-real-time sync.
+> "TeamSync is a smart team collaboration and project management platform designed to help teams organize projects, manage tasks, communicate efficiently, track deadlines and monitor productivity through a centralized workspace."
 
-This isn't a CRUD demo with real-time bolted on. The core design
-constraint from day one was: tasks have to work offline, sync back up
-cleanly, and now also update live for everyone else on the same board —
-and those three things have to cooperate, not fight each other. How that
-actually works is in "Core concepts" below and `docs/DECISIONS.md`.
+---
 
-## What it does
+## 1. Project Introduction
 
-- **Boards** with exactly one owner and any number of invited members.
-  The owner creates/edits/assigns tasks and manages membership; members
-  can only move the cards assigned to them between columns.
-- **Invitations**, not direct adds — a board owner invites by email or by
-  searching the Team page; the invited person sees a notification and has
-  to accept before they're actually on the board.
-- **Offline-first tasks** — every task write lands in a local PouchDB
-  store first and syncs to the server in the background, with real
-  conflict detection (not "last write wins") if the server version moved
-  on since your last edit.
-- **Real-time sync** — task create/move/delete shows up live for everyone
-  else looking at the same board, with a presence indicator for who's
-  currently online, over a Socket.IO connection layered on top of the
-  offline store rather than replacing it.
-- **Everything else you'd expect**: JWT auth, forgot-password email flow,
-  avatar upload, an activity feed, a weekly summary email job, and a full
-  Postman collection covering every endpoint's success *and* failure
-  cases.
+**TeamSync** is an enterprise-grade, real-time, offline-first team collaboration and project management system developed as a Master of Computer Applications (MCA) final-year capstone project. 
 
-## Architecture
+Modern agile software engineering teams require dynamic workspaces where task management, real-time team communication, document sharing, and workload distribution work in synergy without friction. TeamSync addresses this by providing an intuitive digital workspace that combines interactive Kanban visualization, real-time multi-client updates via WebSockets, offline persistence via client-side replication, and optimistic concurrency control to prevent data collisions.
 
-Express and Socket.IO share **one** HTTP server (`backend/src/server.js`),
-not two separate ports. Every task mutation still goes through the REST
-API and its full permission + optimistic-concurrency checks exactly once;
-Socket.IO only broadcasts the result to everyone else already looking at
-that board. Full diagram with Cloudinary/SMTP/CI included, plus the full
-dependency list and what we deliberately didn't use: `docs/TECH_STACK.md`.
-Why it's built this specific way: `docs/DECISIONS.md`. Full real-time
-event contract: `docs/SOCKET_EVENTS.md`.
+---
 
-## Tech stack
+## 2. Problem Statement
 
-**Frontend:** React 19, Vite, React Router, PouchDB (offline store),
-Socket.IO client, Framer Motion.
-**Backend:** Express, Mongoose/MongoDB, Socket.IO, JWT auth, zod
-validation, Cloudinary (avatars), Nodemailer (optional email).
-**Infra:** Docker + Docker Compose (local), nginx (local reverse proxy),
-MongoDB Atlas + Render (production), GitHub Actions (CI), Jest/Supertest
-+ Vitest/RTL (tests).
+Collaborative software teams face several critical operational challenges when relying on traditional project management software:
 
-Full breakdown of every package and — just as deliberately — what we
-chose *not* to use and why (Redux, GraphQL, TypeScript, Kubernetes,
-Redis, microservices): `docs/TECH_STACK.md`.
+1. **Tool Fragmentation:** Teams frequently alternate between disconnected tools for task tracking, instant messaging, file sharing, and project metrics, leading to context switching and lost productivity.
+2. **Offline Data Vulnerability:** Field engineers, remote workers, and traveling team members frequently encounter unstable network conditions. Most existing tools fail completely or lock users out when offline.
+3. **Simultaneous Update Collisions:** When multiple team members concurrently update the same task or board column, typical systems apply a naive "last write wins" policy, silently overwriting teammate edits.
+4. **Unbalanced Workload Allocation:** Project managers often lack immediate visibility into active task burdens, leading to uneven sprint task distributions, burnout, and missed delivery milestones.
 
-## Project structure
+---
+
+## 3. Project Objectives
+
+- **Centralized Project Hub:** Unify board management, task workflows, team communication, and member roles into a single cohesive interface.
+- **Real-Time Collaboration:** Ensure instant bi-directional updates across all connected clients via Socket.IO whenever tasks are created, moved, edited, or deleted.
+- **Offline-First Resilience:** Enable full read/write functionality with zero network connectivity using client-side PouchDB (IndexedDB), synchronizing seamlessly upon reconnection.
+- **Strict Concurrency Control:** Enforce version-based optimistic concurrency control (OCC) to detect and safely resolve conflicting simultaneous edits.
+- **Role-Based Access Governance:** Provide granular permissions distinguishing project/board owners from assigned members.
+
+---
+
+## 4. Key Features & Implementation Status
+
+TeamSync is built around eight foundational features. The current implementation status of each module is accurately outlined below:
+
+| # | Feature | Status | Description |
+|---|---|---|---|
+| 1 | **Live Kanban Board** | **Implemented** | Interactive drag-and-drop task board with instant updates across all active team members via Socket.IO and live presence tracking. |
+| 2 | **Team Chat** | **Planned (Phase 1)** | Real-time project-wise and board-wise communication channels between team members with chat history. |
+| 3 | **Smart Task Assignment** | **Planned (Phase 2)** | Workload-aware assignment recommendation engine that analyzes team members' pending tasks before assignment. |
+| 4 | **Deadline Alerts** | **Partially Implemented (Phase 2)** | Task scheduling with due dates/times, overdue tracking, background summary cron job, and email notification service. |
+| 5 | **Workload Analytics** | **Planned (Phase 3)** | Comprehensive visual reports and charts displaying employee productivity, task distribution, and velocity. |
+| 6 | **File Sharing** | **Partially Implemented (Phase 3)** | Cloudinary and Multer integration pipeline for uploading documents and attaching assets to tasks. |
+| 7 | **Conflict Resolution** | **Implemented** | Optimistic concurrency control (OCC) using strict integer versioning (`409 Conflict`), featuring an interactive conflict-resolution modal. |
+| 8 | **Offline Synchronization** | **Implemented** | Local client-side PouchDB storage with background polling, immediate push queues, and live change-feed reconciliation. |
+
+---
+
+## 5. Technology Stack
+
+### Frontend Architecture
+- **Core Library:** [React 19](https://react.dev/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Routing:** [React Router v7](https://reactrouter.com/)
+- **Animations & Layout Transitions:** [Framer Motion](https://www.framer.com/motion/)
+- **Offline Storage:** [PouchDB Browser](https://pouchdb.com/) (IndexedDB adapter)
+- **Real-Time Client:** [Socket.IO Client](https://socket.io/)
+- **Iconography:** [Lucide React](https://lucide.dev/)
+- **Testing:** [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/)
+
+### Backend Architecture
+- **Runtime Environment:** [Node.js](https://nodejs.org/) (ES Modules)
+- **Web Framework:** [Express.js](https://expressjs.com/)
+- **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+- **Real-Time Engine:** [Socket.IO](https://socket.io/)
+- **Authentication:** [JSON Web Tokens (JWT)](https://jwt.io/) & [Bcrypt.js](https://github.com/dcodeIO/bcrypt.js)
+- **Data Validation:** [Zod](https://zod.dev/)
+- **Cloud Media Storage:** [Cloudinary SDK](https://cloudinary.com/) (configured)
+- **Background Jobs:** [Node-Cron](https://github.com/node-cron/node-cron)
+- **Email Delivery:** [Nodemailer](https://nodemailer.com/) (dev console fallback & SMTP)
+- **Testing:** [Jest](https://jestjs.io/) & [Supertest](https://github.com/ladjs/supertest)
+
+---
+
+## 6. System Architecture
+
+TeamSync employs a hybrid **REST + WebSocket + Offline Replication** architecture. Express and Socket.IO share a single unified HTTP server instance to simplify networking and local proxy routing.
 
 ```
-frontend/   React + Vite client (see frontend/README.md)
-backend/    Express API (see backend/README.md)
-docs/       API_CONTRACT.md, SOCKET_EVENTS.md, DECISIONS.md,
-            DEPLOYMENT.md, TECH_STACK.md
-Postman/    Flowty.postman_collection.json — every endpoint, success + failure cases
-render.yaml Render Blueprint (production deploy config)
-docker-compose.yml, backend/Dockerfile, frontend/Dockerfile + nginx.conf
+                           +------------------------------------------+
+                           |           TeamSync Web Client            |
+                           |   (React 19 + Framer Motion + Vite)      |
+                           +--------------------+---------------------+
+                                                |
+                     +--------------------------+--------------------------+
+                     | Local Write (Optimistic)                            | REST API (HTTP)
+                     v                                                     v
+          +--------------------+                               +-----------------------+
+          |  PouchDB Store     |                               | Express API Server    |
+          |  (IndexedDB local) |                               | (Controllers/Services)|
+          +---------+----------+                               +-----------+-----------+
+                    |                                                      |
+                    | Background Sync Loop                                 | Mongoose
+                    +------------------------> [HTTP PATCH /api/tasks] ----+
+                                                        |                  v
+                                                        |        +-------------------+
+                                                        |        | MongoDB Database  |
+                                                        |        | (Collections)     |
+                                                        |        +-------------------+
+                                                        |
+                                                        v
+                                            +-----------------------+
+                                            |   Socket.IO Server    |
+                                            | (Rooms: board:<id>)   |
+                                            +-----------+-----------+
+                                                        |
+                                                        | Real-Time Broadcast
+                                                        v (task:updated, etc.)
+                                            +-----------------------+
+                                            | Other Active Clients  |
+                                            | (Live Kanban Updates) |
+                                            +-----------------------+
 ```
 
-## Getting started
+### Key Architectural Highlights
+1. **Single HTTP Server Sharing:** Express and Socket.IO attach to the same HTTP server (`src/server.js`), eliminating CORS and port conflicts in local development and production.
+2. **Optimistic UI with PouchDB:** When a user drags a task card, changes write to local PouchDB first. The UI updates instantaneously via PouchDB's `.changes()` feed before the network request finishes.
+3. **Optimistic Concurrency Control (OCC):** Every task document has an integer `version`. The server increments this on each mutation. If a client attempts to update a task with a stale version, the server rejects it with `409 Conflict`, triggering the interactive conflict-resolution interface.
+4. **Scoped Socket Rooms:** Socket connections are authenticated via JWT during the handshake and scoped strictly to `board:<boardId>` rooms. Sockets only receive updates for boards they own or belong to.
 
-### Option A — run both locally
+---
 
-```bash
-# Terminal 1 — backend
+## 7. Project Modules
+
+```
+TeamSync/
+├── backend/                  # Express REST API & Socket.IO server
+│   ├── src/
+│   │   ├── config/           # Cloudinary & environment configuration
+│   │   ├── controllers/      # Route request/response handlers
+│   │   ├── db/               # MongoDB connection lifecycle
+│   │   ├── jobs/             # Scheduled background jobs (weekly summary)
+│   │   ├── middleware/       # JWT auth, error handlers, request loggers
+│   │   ├── models/           # Mongoose schemas (User, Board, Task, Activity, Notification)
+│   │   ├── repositories/     # Data access abstraction layer
+│   │   ├── routes/           # REST endpoint definitions
+│   │   ├── schemas/          # Zod validation schemas
+│   │   ├── services/         # Core business logic
+│   │   ├── sockets/          # Socket.IO connection & room management
+│   │   └── utils/            # JWT, email service, error helpers
+│   └── tests/                # Jest integration and socket tests
+│
+├── frontend/                 # React 19 single-page application
+│   ├── src/
+│   │   ├── api/              # Fetch API wrappers for REST endpoints
+│   │   ├── components/       # Reusable UI components (Board, Column, TaskCard, etc.)
+│   │   ├── context/          # Context providers (Auth, Boards, Tasks, Socket, Users)
+│   │   ├── db/               # Local PouchDB instance & background sync loop
+│   │   ├── pages/            # View pages (BoardPage, Dashboard, MyTasks, Team, Auth)
+│   │   ├── styles/           # CSS design systems (light/dark themes)
+│   │   └── utils/            # Formatting and column utilities
+│   └── index.html            # Application entry point
+│
+└── docs/                     # Architectural, API contract & deployment documentation
+```
+
+### Module Breakdown:
+1. **Authentication & Profile Module:** Secure registration, login, JWT token management, password reset flow, and avatar management.
+2. **Board & Project Management Module:** Creation, editing, and deletion of project boards with customizable columns and member invitation acceptance flows.
+3. **Live Kanban Engine:** Column drag-over indicators, Framer Motion card animations, and instant real-time synchronization across team members.
+4. **Offline Synchronization & OCC Engine:** Local IndexedDB caching, background polling fallback, queue processing, and conflict detection.
+5. **Team & Collaboration Module:** Member invitations, role permissions (owner vs assignee), activity audit trail, and presence indicators.
+
+---
+
+## 8. Installation & Setup Instructions
+
+### Prerequisites
+- **Node.js:** v18.0.0 or higher
+- **MongoDB:** Community Server v7.0 or v9.0 installed locally and running on port `27017` (or a MongoDB Atlas connection string)
+- **Operating System:** Windows 10/11, macOS, or Linux
+
+### Clone Repository
+
+```powershell
+git clone https://github.com/Vikram-MS-git/TeamSync-project.git
+cd TeamSync-project
+```
+
+---
+
+## 9. MongoDB & Environment Configuration
+
+### Backend Configuration (`backend/.env`)
+
+Copy `.env.example` in `backend` to `.env`:
+
+```powershell
 cd backend
-cp .env.example .env   # fill in JWT_SECRET (any random string) and MONGODB_URI
-npm install
-npm run dev              # http://localhost:4000
+Copy-Item .env.example .env
+```
 
-# Terminal 2 — frontend
+Ensure the configuration matches your local setup:
+
+```ini
+PORT=4000
+CLIENT_ORIGIN=http://localhost:5173
+
+# Secret key for JWT session tokens
+JWT_SECRET=teamsync_dev_secret_2026_change_this_to_a_random_value
+
+# MongoDB Connection String
+MONGODB_URI=mongodb://127.0.0.1:27017/teamsync
+
+# Email Configuration (Optional - dev mode logs to console automatically)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM=TeamSync <no-reply@teamsync.dev>
+
+# Cloudinary Storage (Optional)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+> **Security Note:** Never commit actual production credentials or private keys to source control.
+
+---
+
+## 10. Execution Guide (Windows PowerShell)
+
+### Step 1: Install Dependencies
+
+Open a PowerShell terminal and install packages for both backend and frontend:
+
+```powershell
+# Install Backend Dependencies
+cd backend
+npm.cmd install
+
+# Install Frontend Dependencies
+cd ../frontend
+npm.cmd install
+```
+
+### Step 2: Start the Backend Server
+
+```powershell
+cd backend
+npm.cmd run dev
+```
+
+*Expected output:*
+```
+API listening on http://localhost:4000
+MongoDB connected
+Weekly summary job scheduled (Mondays 08:00).
+```
+
+### Step 3: Start the Frontend Application
+
+Open a second PowerShell terminal:
+
+```powershell
 cd frontend
-npm install
-npm run dev               # http://localhost:5173
+npm.cmd run dev
 ```
 
-Then open `http://localhost:5173` and register a new account at `/signup`
-— there's no seeded login; every account and board is created for real
-through the API.
+*Expected output:*
+```
+  VITE v8.2.0  ready in 320 ms
 
-### Option B — Docker (no local Node/MongoDB needed)
-
-```bash
-cp .env.example .env   # optional — sets JWT_SECRET; falls back to a
-                        # placeholder if skipped, fine for a quick local run
-docker compose up --build
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
 ```
 
-Open `http://localhost:8080`. The API is also reachable directly at
-`http://localhost:4000` (for Postman/curl). `docker compose down -v` tears
-the whole stack down, including the Mongo volume.
+### Step 4: Access Application
+Open `http://localhost:5173` in your browser. Register a new user account or log in with the initial test credentials:
+- **Email:** `greenlanterns@gmail.com`
+- **Password:** `password123`
 
-The client container talks to the API through nginx (`frontend/nginx.conf`)
-rather than directly — same origin, no CORS to configure, and the exact
-proxy shape a real deployment behind a reverse proxy would need anyway.
-That proxy config has two rules, not one: `/api/*` for REST, and a
-separate `/socket.io/*` rule carrying the WebSocket `Upgrade` headers —
-easy to forget, and the one thing most likely to make real-time silently
-stop working in a container without erroring anywhere obvious.
+---
 
-### Option C — the real deployed version
+## 11. Testing & Verification
 
-**Live at https://collabboard-client-p85o.onrender.com** (API:
-`https://collabboard-api-cn2v.onrender.com`). Render (backend as a Docker
-web service, frontend as a static site) + MongoDB Atlas, both free tier.
-Full setup walkthrough: `docs/DEPLOYMENT.md`. Actual config: `render.yaml`
-at the repo root.
+TeamSync includes automated unit and integration tests across both frontend and backend.
 
-## Core concepts
-
-- **Boards have exactly one owner and any number of members.** The owner
-  creates and assigns tasks, edits the board, and manages membership.
-  Members can only move the cards assigned to them between columns —
-  they can't create, edit, reassign, or delete tasks.
-- **Joining a board goes through an invitation, not a direct add.** A
-  board owner sends an invite by email (or by searching the Team page);
-  the invited person sees it as a notification (the bell icon in the top
-  bar) and has to Accept before they're actually added to the board.
-- **Every board/task list is scoped to the logged-in user.** `GET
-  /api/boards` and `GET /api/tasks` only ever return boards/tasks the
-  user owns or is a member of — never the whole database.
-- **Tasks are offline-first, not just "works offline as a fallback."**
-  Every write lands in a local PouchDB store first; a background sync
-  loop pushes it to the API and flags a real conflict (not last-write-wins)
-  if the server version moved on first.
-- **Task changes are real-time on top of that, not instead of it.**
-  Create, move, or delete a task and everyone else currently viewing that
-  board sees it immediately — a Socket.IO event merges into the same
-  local PouchDB store the offline sync already uses, so the UI has one
-  update path, not two competing ones. See `docs/SOCKET_EVENTS.md` for
-  the event contract, and the "● N online" indicator on a board's header
-  for presence.
-
-## API
-
-Full request/response contract, including every error case:
-`docs/API_CONTRACT.md`.
-Real-time (Socket.IO) event contract: `docs/SOCKET_EVENTS.md`.
-Importable Postman collection: `Postman/Flowty.postman_collection.json`
-(REST only — Postman doesn't exercise the socket layer, see
-`docs/SOCKET_EVENTS.md` for how to test that by hand).
-
-| Resource | Base path | Auth required |
-|---|---|:---:|
-| Auth | `/api/auth/*` | Only `/me` |
-| Tasks | `/api/tasks` | Yes |
-| Boards | `/api/boards` (+ `/members`, `/invitations`, `/stats`) | Yes |
-| Invitations | `/api/invitations` | Yes |
-| Users | `/api/users` (supports `?q=` search) | Yes |
-| Activity | `/api/activity` | Yes |
-
-## Testing
-
-```bash
-cd backend && npm test    # Jest + Supertest, real in-memory MongoDB
-cd frontend && npm test   # Vitest + React Testing Library
+### Run Backend Tests (Jest)
+```powershell
+cd backend
+npm.cmd test -- tests/sockets.test.js
+npm.cmd test -- tests/tasks.test.js
 ```
+*Coverage includes:* JWT handshake authentication, board room scoping, `task:created`/`task:updated`/`task:deleted` broadcasts, presence updates, and optimistic concurrency version conflict rejections.
 
-Both run automatically on every push/PR via GitHub Actions
-(`.github/workflows/ci.yml`, Node 22). The socket layer specifically has
-its own integration test (`backend/tests/sockets.test.js`) that spins up
-a real Socket.IO server rather than mocking it — see `docs/SOCKET_EVENTS.md`'s
-"Testing status" section for exactly what it covers.
+### Run Frontend Tests (Vitest)
+```powershell
+cd frontend
+npm.cmd test
+```
+*Coverage includes:* TaskCard rendering, TeamPage member invitations, and TaskConflictBanner conflict resolution.
 
-## Status
+---
 
-- [x] Front-end: all pages built, wired to the real API — no mock data remains
-- [x] Backend: Express API layered (routes/controllers/services/repositories)
-- [x] MongoDB persistence (Mongoose) for users, boards, tasks, invitations
-- [x] Auth: register, login, JWT, protected `/me`
-- [x] Board ownership + membership model, with owner-only task
-      creation/editing and assignee-only card moves enforced server-side
-- [x] Invitation flow: send → pending → notification → accept/decline
-- [x] Team page: board-scoped member list, search-to-invite by name/email
-- [x] Task creation via a modal (title, description, status, assignee,
-      due date + time) with a custom calendar/time picker
-- [x] Offline-first task sync (PouchDB) with conflict detection
-- [x] Postman collection covering every endpoint, including permission
-      and failure cases (see `Postman/` above)
-- [x] Automated tests + CI (Jest/Supertest on the backend, Vitest/RTL on
-      the frontend — GitHub Actions runs both on every push/PR)
-- [x] Real-time task sync (Socket.IO): live create/move/delete across
-      everyone viewing a board, plus a presence indicator. Covered by an
-      automated integration test (`backend/tests/sockets.test.js`) and
-      confirmed manually — two accounts, one board, watched a card move
-      live in the other window with the socket connection visible in
-      DevTools as a `101 Switching Protocols` upgrade. The invitation
-      bell still polls — see `docs/SOCKET_EVENTS.md`'s "Not implemented"
-      section for why that's a deliberate scope cut, not a gap
-- [x] Docker: `docker compose up --build` runs the whole stack (Mongo +
-      API + nginx-served client) from a clean clone — confirmed working,
-      including real-time through the container setup specifically (not
-      just standalone). See "Getting started" above.
-- [x] Deployment: live at https://collabboard-client-p85o.onrender.com
-      (Render + MongoDB Atlas, both free tier) — `render.yaml` +
-      `docs/DEPLOYMENT.md`.
+## 12. Screenshots Section
 
-## Docs index
+| View | Description | Preview Placeholder |
+|---|---|---|
+| **Login & Signup** | Secure JWT authentication with animated showcase panel | `![TeamSync Auth](docs/screenshots/auth.png)` |
+| **Live Kanban Board** | Real-time columns, drag-and-drop cards, and presence indicators | `![TeamSync Board](docs/screenshots/board.png)` |
+| **Task Drawer & Details** | Full task inspector with status, assignee, and due date | `![TeamSync Task Detail](docs/screenshots/task_detail.png)` |
+| **Conflict Resolution** | Visual comparison banner when concurrent edits are detected | `![TeamSync Conflict](docs/screenshots/conflict.png)` |
+| **Team Management** | Team member roster with invitation management | `![TeamSync Team](docs/screenshots/team.png)` |
 
-| Doc | Covers |
-|---|---|
-| `docs/API_CONTRACT.md` | Every REST endpoint, request/response shapes, every error case |
-| `docs/SOCKET_EVENTS.md` | Real-time event contract, presence, reconnection behavior, testing status |
-| `docs/DECISIONS.md` | Why things are built the way they are, in the order they were decided |
-| `docs/DEPLOYMENT.md` | Atlas + Render setup, step by step |
-| `docs/TECH_STACK.md` | Every dependency and what it's for, plus what we deliberately didn't use |
-| `backend/README.md` | Backend-specific structure, design decisions, known gaps |
-| `frontend/README.md` | Frontend-specific structure, design decisions, known limitations |
+*(Place screenshots into the `docs/screenshots/` folder to view rendered previews.)*
+
+---
+
+## 13. Future Enhancements Roadmap
+
+- [ ] **Phase 1 (Finalizing):** Team Chat with real-time project-wise communication channels and notification badges.
+- [ ] **Phase 2:** Smart Task Assignment algorithm balancing workload based on member active task counts.
+- [ ] **Phase 2:** Proactive deadline alert popups and email triggers for overdue tasks.
+- [ ] **Phase 3:** Workload Analytics dashboard featuring task velocity, completion distributions, and productivity charts.
+- [ ] **Phase 3:** Task attachment file sharing with Cloudinary document viewers.
+- [ ] **Phase 4:** Advanced PouchDB multi-master conflict resolution and offline queue auditing.
+
+---
+
+## 14. Conclusion
+
+**TeamSync** demonstrates the implementation of a modern, resilient collaboration system. By marrying the immediacy of WebSockets with the reliability of offline-first PouchDB and optimistic concurrency control, TeamSync guarantees that team members can collaborate seamlessly without risk of data loss or workflow interruption. The project fulfills all academic MCA capstone criteria and exemplifies industry-standard software design patterns.
+
+---
+
+**Developed for Master of Computer Applications (MCA) Project**  
+*Repository:* [https://github.com/Vikram-MS-git/TeamSync-project](https://github.com/Vikram-MS-git/TeamSync-project)

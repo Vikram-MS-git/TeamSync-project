@@ -1,4 +1,8 @@
 {
+  "name": "teamsync",
+  "version": "1.0.0",
+  "description": "TeamSync – Smart Team Collaboration and Project Management System",
+  "private": true,
   "dependencies": {
     "pouchdb-browser": "^9.0.0"
   }

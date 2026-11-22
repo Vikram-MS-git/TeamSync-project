@@ -71,7 +71,7 @@ async function notifyAssignment(user, task, boardName) {
     text:
       `Hi ${user.name},\n\n` +
       `You've been assigned a task on "${boardName}":\n\n"${task.title}"\n\n` +
-      `Open Flowty to see the details.`,
+      `Open TeamSync to see the details.`,
   });
 }
 

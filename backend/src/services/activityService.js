@@ -156,7 +156,7 @@ async function notifyBoardMembers({ action, actorId, boardId, taskId, taskTitle,
       sendEmail({
         to: u.email,
         subject: `Activity on "${board.name}"`,
-        text: `Hi ${u.name},\n\n${message} on "${board.name}".\n\nOpen Flowty to see the board.`,
+        text: `Hi ${u.name},\n\n${message} on "${board.name}".\n\nOpen TeamSync to see the board.`,
       })
     )
   );

@@ -79,10 +79,10 @@ export async function requestPasswordReset(email) {
   const resetLink = `${config.clientOrigin}/reset-password?token=${rawToken}`;
   await sendEmail({
     to: user.email,
-    subject: "Reset your Flowty password",
+    subject: "Reset your TeamSync password",
     text:
       `Hi ${user.name},\n\n` +
-      `Someone requested a password reset for your Flowty account. If this was you, click the link below — it expires in 1 hour:\n\n` +
+      `Someone requested a password reset for your TeamSync account. If this was you, click the link below — it expires in 1 hour:\n\n` +
       `${resetLink}\n\n` +
       `If you didn't request this, you can safely ignore this email.`,
   });

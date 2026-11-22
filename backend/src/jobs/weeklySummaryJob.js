@@ -19,13 +19,13 @@ export async function runWeeklySummary() {
       const summary = summaryByUserId.get(user.id) ?? { taskCount: 0, overdueCount: 0 };
       return sendEmail({
         to: user.email,
-        subject: "Your weekly Flowty summary",
+        subject: "Your weekly TeamSync summary",
         text:
           `Hi ${user.name},\n\n` +
           `Here's your task summary for this week:\n\n` +
           `- ${summary.taskCount} task${summary.taskCount === 1 ? "" : "s"} assigned to you\n` +
           `- ${summary.overdueCount} overdue\n\n` +
-          `Open Flowty to review your board.`,
+          `Open TeamSync to review your board.`,
       });
     })
   );

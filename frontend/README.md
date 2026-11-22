@@ -1,8 +1,8 @@
-# Flowty (client)
+# TeamSync (Client)
 
-The React front end for Flowty, a kanban-style task board with board
-ownership, member invitations, and permissioned tasks. Built with Vite,
-React Router, and a real Express + MongoDB API behind it — see
+The React front end for TeamSync, a smart team collaboration and project management platform.
+Built with Vite, React 19, React Router, Framer Motion, PouchDB, and Socket.IO client,
+with a Node.js Express + MongoDB API behind it — see
 `../backend/README.md` and the root `../README.md` for the full picture.
 
 ## Getting started

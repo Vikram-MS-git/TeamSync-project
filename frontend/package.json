@@ -1,7 +1,8 @@
 {
-  "name": "collabboard",
+  "name": "teamsync-client",
+  "description": "TeamSync Frontend Web Client built with React 19, Vite, and PouchDB",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

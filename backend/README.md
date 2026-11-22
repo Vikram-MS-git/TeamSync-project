@@ -1,8 +1,7 @@
-# Flowty Server
+# TeamSync Server
 
-The REST API for Flowty, built with Node.js, Express, and MongoDB
-(Mongoose). Six resources — auth, tasks, boards, invitations, users,
-activity — all layered (routes → controllers → services → repositories)
+The REST API and Socket.IO real-time server for TeamSync, built with Node.js, Express, and MongoDB
+(Mongoose). Layered architecture (routes → controllers → services → repositories)
 and JWT-protected.
 
 ## Getting started

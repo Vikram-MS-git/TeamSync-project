@@ -1,6 +1,7 @@
 {
-  "name": "flowty-server",
-  "version": "0.1.0",
+  "name": "teamsync-server",
+  "version": "1.0.0",
+  "description": "TeamSync Backend API and Socket.IO Real-time Server",
   "private": true,
   "type": "module",
   "scripts": {
