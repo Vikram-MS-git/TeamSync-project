@@ -15,6 +15,7 @@ import { NotificationsProvider } from "./context/NotificationsContext";
 import AuthPage from "./pages/AuthPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import HomePage from "./pages/HomePage";
 import BoardsListPage from "./pages/BoardsListPage";
 import BoardPage from "./pages/BoardPage";
 import TaskDetailPage from "./pages/TaskDetailPage";
@@ -51,7 +52,13 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -68,6 +75,8 @@ function App() {
               <div className={`main ${isDashboard ? "main--dark" : ""}`}>
                 <Routes>
                   <Route path="/" element={<BoardsListPage />} />
+                  <Route path="/home" element={<HomePage />} />
+                  <Route path="/boards" element={<BoardsListPage />} />
                   <Route path="/boards/:boardId" element={<BoardPage />} />
                   <Route path="/tasks/:id" element={<TaskDetailPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />

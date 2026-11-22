@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutGrid, Gauge, CheckSquare, Users, Settings, ChevronLeft } from "lucide-react";
+import { Home, LayoutGrid, Gauge, CheckSquare, Users, Settings, ChevronLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { LOGO_ICON, AUTH_BG } from "../assets/cdn.js";
 import UserAvatar from "./UserAvatar.jsx";
 
 const NAV_ITEMS = [
+  { label: "Home", to: "/home", Icon: Home },
   { label: "Dashboard", to: "/dashboard", Icon: Gauge },
   { label: "Boards", to: "/", end: true, Icon: LayoutGrid },
   { label: "My Tasks", to: "/my-tasks", Icon: CheckSquare },
@@ -74,7 +75,7 @@ function Sidebar() {
       <div className="sidebar__bg" style={{ backgroundImage: `url(${AUTH_BG})` }} aria-hidden="true" />
       <div className="sidebar__bg-overlay" aria-hidden="true" />
       <div className="sidebar__top">
-        <div className="sidebar__brand">
+        <Link to="/home" className="sidebar__brand" style={{ textDecoration: "none", color: "inherit" }} title="TeamSync Home">
           <motion.img
             src={LOGO_ICON}
             alt=""
@@ -85,7 +86,7 @@ function Sidebar() {
           <NavLabel show={expanded}>
             <span className="sidebar__logo">TeamSync</span>
           </NavLabel>
-        </div>
+        </Link>
 
         {/* Hidden while collapsed-and-not-hovering — it was sitting right
             on top of the logo mark in that state with nowhere to go.
