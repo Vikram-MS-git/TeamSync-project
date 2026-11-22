@@ -118,11 +118,11 @@ export default function AuthPage() {
           >
             <div className="as-brand">
               <img src={LOGO_ICON} alt="" className="as-brand-mark" />
-              <span className="as-brand-name">Flowty</span>
+              <span className="as-brand-name">TeamSync</span>
             </div>
             <h2 className="as-showcase-title">Where scattered work becomes a plan.</h2>
             <p className="as-showcase-sub">
-              Flowty pulls every task, note and deadline into one shared board, so everyone
+              TeamSync pulls every task, note and deadline into one shared board, so everyone
               knows what's next without a status meeting.
             </p>
             <ul className="as-proof">

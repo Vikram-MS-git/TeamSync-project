@@ -83,7 +83,7 @@ function Sidebar() {
             className="sidebar__brand-mark"
           />
           <NavLabel show={expanded}>
-            <span className="sidebar__logo">Flowty</span>
+            <span className="sidebar__logo">TeamSync</span>
           </NavLabel>
         </div>
 
