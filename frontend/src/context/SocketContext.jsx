@@ -6,7 +6,7 @@
 // (see db/tasksSync.js) — the live `changes` feed TasksContext already
 // listens to then just picks them up, so this file never touches task
 // state directly.
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { BASE_URL, getToken } from "../api/client.js";
 import { useAuth } from "./AuthContext.jsx";
@@ -19,8 +19,10 @@ export function SocketProvider({ children }) {
   const { user, isAuthenticated, logout } = useAuth();
   const { boards } = useBoards();
   const [presenceByBoard, setPresenceByBoard] = useState({}); // boardId -> string[] of userIds
+  const [isConnected, setIsConnected] = useState(false);
 
   const boardsRef = useRef(boards);
+  const joinedBoardsRef = useRef(new Set());
   useEffect(() => {
     boardsRef.current = boards;
   }, [boards]);
@@ -48,7 +50,12 @@ export function SocketProvider({ children }) {
     }
 
     socket.on("connect", () => {
-      boardsRef.current.forEach((b) => socket.emit("board:join", b.id));
+      setIsConnected(true);
+      joinedBoardsRef.current.clear();
+      boardsRef.current.forEach((b) => {
+        socket.emit("board:join", b.id);
+        joinedBoardsRef.current.add(b.id);
+      });
       // Socket.IO reconnects for you, it does not replay what happened
       // while you were gone — a refetch is the cheap, correct recovery,
       // same as the offline-sync loop's own reconnect handling.
@@ -57,7 +64,13 @@ export function SocketProvider({ children }) {
       });
     });
 
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+      joinedBoardsRef.current.clear();
+    });
+
     socket.on("connect_error", (err) => {
+      setIsConnected(false);
       console.error("Socket connection failed:", err.message);
       // Same signal the REST client already treats as "session's over" —
       // a token that's expired mid-session should log the user out, not
@@ -81,6 +94,8 @@ export function SocketProvider({ children }) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
+      joinedBoardsRef.current.clear();
     };
     // Reconnecting whenever the user changes (login/logout) is correct —
     // a stale socket authenticated as the previous user must not survive
@@ -93,12 +108,48 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket?.connected) return;
-    boards.forEach((b) => socket.emit("board:join", b.id));
+    boards.forEach((b) => {
+      if (!joinedBoardsRef.current.has(b.id)) {
+        socket.emit("board:join", b.id);
+        joinedBoardsRef.current.add(b.id);
+      }
+    });
   }, [boards]);
 
+  const joinBoard = useCallback((boardId) => {
+    const socket = socketRef.current;
+    if (!socket?.connected || !boardId) return;
+    if (!joinedBoardsRef.current.has(boardId)) {
+      socket.emit("board:join", boardId);
+      joinedBoardsRef.current.add(boardId);
+    }
+  }, []);
+
+  const leaveBoard = useCallback((boardId) => {
+    const socket = socketRef.current;
+    if (!socket?.connected || !boardId) return;
+    socket.emit("board:leave", boardId);
+    joinedBoardsRef.current.delete(boardId);
+  }, []);
+
   return (
-    <SocketContext.Provider value={{ presenceByBoard }}>{children}</SocketContext.Provider>
+    <SocketContext.Provider
+      value={{
+        socket: socketRef.current,
+        isConnected,
+        presenceByBoard,
+        joinBoard,
+        leaveBoard,
+      }}
+    >
+      {children}
+    </SocketContext.Provider>
   );
+}
+
+// Full socket context hook (socket instance, connection status, board join/leave, presence)
+export function useSocket() {
+  return useContext(SocketContext);
 }
 
 // Online user ids for a given board (excluding nobody in particular —

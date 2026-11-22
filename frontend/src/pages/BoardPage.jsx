@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useBoards } from "../context/BoardsContext";
 import { useTasks } from "../context/TasksContext";
 import { useAuth } from "../context/AuthContext";
-import { usePresence } from "../context/SocketContext";
+import { usePresence, useSocket } from "../context/SocketContext";
 import { getColumns } from "../utils/columns";
 import Board from "../components/Board";
 import TaskDetailPanel from "../components/TaskDetailPanel";
@@ -36,7 +36,17 @@ function BoardPage() {
   const [members, setMembers] = useState([]);
 
   const isOwner = !!board && board.ownerId === user?.id;
+  const { isConnected, joinBoard, leaveBoard } = useSocket() || {};
   const onlineUserIds = usePresence(boardId);
+
+  useEffect(() => {
+    if (boardId && joinBoard) {
+      joinBoard(boardId);
+      return () => {
+        leaveBoard?.(boardId);
+      };
+    }
+  }, [boardId, joinBoard, leaveBoard]);
 
   useEffect(() => {
     if (!board) return;
@@ -150,6 +160,36 @@ function BoardPage() {
               const member = members.find((m) => m.name === name);
               return <UserAvatar key={name} user={member} name={name} size={28} className="bp2-header__person" title={name} />;
             })}
+          </div>
+
+          <div
+            className="bp2-header__live-status"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              padding: "4px 10px",
+              borderRadius: 20,
+              background: isConnected ? "rgba(74, 222, 128, 0.12)" : "rgba(239, 68, 68, 0.12)",
+              color: isConnected ? "#4ade80" : "#f87171",
+              border: `1px solid ${isConnected ? "rgba(74, 222, 128, 0.25)" : "rgba(239, 68, 68, 0.25)"}`,
+              fontWeight: 500,
+              flex: "0 0 auto",
+            }}
+            title={isConnected ? "Real-time Socket.IO synchronization active" : "Reconnecting to live server..."}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: isConnected ? "#4ade80" : "#f87171",
+                boxShadow: `0 0 0 2px ${isConnected ? "rgba(74, 222, 128, 0.25)" : "rgba(239, 68, 68, 0.25)"}`,
+              }}
+            />
+            {isConnected ? "Live Sync" : "Reconnecting..."}
           </div>
 
           {onlineUserIds.length > 0 && (

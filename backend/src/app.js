@@ -16,7 +16,24 @@ import { getDbState } from "./db/connect.js";
 
 const app = express();
 
-app.use(cors({ origin: config.clientOrigin, credentials: true }));
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (origin === config.clientOrigin) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  return false;
+};
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS not allowed"));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "100kb" }));
 app.use(requestId);
 app.use(requestLogger);

@@ -18,7 +18,12 @@ const BOARD_ROOM_PREFIX = "board:";
 export function attachSockets(httpServer, config) {
   const io = new Server(httpServer, {
     cors: {
-      origin: config.clientOrigin,
+      origin: (origin, callback) => {
+        if (!origin || origin === config.clientOrigin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("CORS not allowed"));
+      },
       credentials: true,
     },
   });
@@ -63,21 +68,28 @@ export function attachSockets(httpServer, config) {
       const isMember = board.members.some((m) => m.toString() === userId);
       if (!isOwner && !isMember) return;
 
-      socket.join(BOARD_ROOM_PREFIX + boardId);
+      const roomName = BOARD_ROOM_PREFIX + boardId;
+      const alreadyInRoom = socket.rooms.has(roomName);
+      socket.join(roomName);
 
-      const boardPresence = presence.get(boardId) ?? new Map();
-      boardPresence.set(userId, (boardPresence.get(userId) ?? 0) + 1);
-      presence.set(boardId, boardPresence);
+      if (!alreadyInRoom) {
+        const boardPresence = presence.get(boardId) ?? new Map();
+        boardPresence.set(userId, (boardPresence.get(userId) ?? 0) + 1);
+        presence.set(boardId, boardPresence);
+        announcePresence(boardId);
+      }
 
       socket.emit("board:joined", boardId);
-      announcePresence(boardId);
     });
 
     socket.on("board:leave", (boardId) => {
       if (typeof boardId !== "string") return;
-      socket.leave(BOARD_ROOM_PREFIX + boardId);
-      dropPresence(boardId, socket.user.id);
-      announcePresence(boardId);
+      const roomName = BOARD_ROOM_PREFIX + boardId;
+      if (socket.rooms.has(roomName)) {
+        socket.leave(roomName);
+        dropPresence(boardId, socket.user.id);
+        announcePresence(boardId);
+      }
     });
 
     // Fires before the socket actually disconnects, while socket.rooms is

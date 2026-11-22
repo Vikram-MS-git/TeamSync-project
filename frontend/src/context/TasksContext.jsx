@@ -118,6 +118,12 @@ export function TasksProvider({ children }) {
   };
 
   const moveTask = async (taskId, newColumnId) => {
+    try {
+      const doc = await tasksDB.get(String(taskId));
+      if (doc.columnId === newColumnId) return;
+    } catch {
+      // If not yet in local db, proceed
+    }
     await patchLocalTask(taskId, { columnId: newColumnId }, showToast, "Couldn't move the task");
     trySync();
   };
