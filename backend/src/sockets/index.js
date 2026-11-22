@@ -12,6 +12,7 @@
 import { Server } from "socket.io";
 import { verifyToken } from "../utils/jwt.js";
 import * as boardRepository from "../repositories/boardRepository.js";
+import * as chatService from "../services/chatService.js";
 
 const BOARD_ROOM_PREFIX = "board:";
 
@@ -89,6 +90,25 @@ export function attachSockets(httpServer, config) {
         socket.leave(roomName);
         dropPresence(boardId, socket.user.id);
         announcePresence(boardId);
+      }
+    });
+
+    socket.on("chat:message", async (payload, callback) => {
+      try {
+        const { boardId, message } = payload || {};
+        if (!boardId || typeof message !== "string" || !message.trim()) {
+          if (typeof callback === "function") callback({ error: "Invalid chat payload" });
+          return;
+        }
+        const savedMessage = await chatService.postMessage({
+          boardId,
+          userId: socket.user.id,
+          message: message.trim(),
+        });
+        emitToBoard(io, boardId, "chat:message", savedMessage);
+        if (typeof callback === "function") callback({ success: true, message: savedMessage });
+      } catch (err) {
+        if (typeof callback === "function") callback({ error: err.message || "Failed to post message" });
       }
     });
 

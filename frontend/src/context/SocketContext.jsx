@@ -20,6 +20,7 @@ export function SocketProvider({ children }) {
   const { boards } = useBoards();
   const [presenceByBoard, setPresenceByBoard] = useState({}); // boardId -> string[] of userIds
   const [isConnected, setIsConnected] = useState(false);
+  const [socketInstance, setSocketInstance] = useState(null);
 
   const boardsRef = useRef(boards);
   const joinedBoardsRef = useRef(new Set());
@@ -40,6 +41,7 @@ export function SocketProvider({ children }) {
     // just be `io(BASE_URL, ...)`.
     const socket = io(BASE_URL || undefined, { auth: { token } });
     socketRef.current = socket;
+    setSocketInstance(socket);
 
     function handleRemoteTask(payload, apply) {
       // Our own change already landed locally via the optimistic PouchDB
@@ -94,6 +96,7 @@ export function SocketProvider({ children }) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setSocketInstance(null);
       setIsConnected(false);
       joinedBoardsRef.current.clear();
     };
@@ -135,7 +138,7 @@ export function SocketProvider({ children }) {
   return (
     <SocketContext.Provider
       value={{
-        socket: socketRef.current,
+        socket: socketInstance || socketRef.current,
         isConnected,
         presenceByBoard,
         joinBoard,

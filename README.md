@@ -40,7 +40,7 @@ TeamSync is built around eight foundational features. The current implementation
 | # | Feature | Status | Description |
 |---|---|---|---|
 | 1 | **Live Kanban Board** | **Implemented** | Interactive drag-and-drop task board with instant updates across all active team members via Socket.IO and live presence tracking. |
-| 2 | **Team Chat** | **Planned (Phase 1)** | Real-time project-wise and board-wise communication channels between team members with chat history. |
+| 2 | **Team Chat** | **Implemented** | Real-time project-wise communication via Socket.IO (`chat:message`), REST fallback (`/api/boards/:id/chat`), persistent MongoDB history, unread message badges, and responsive sliding drawer UI. |
 | 3 | **Smart Task Assignment** | **Planned (Phase 2)** | Workload-aware assignment recommendation engine that analyzes team members' pending tasks before assignment. |
 | 4 | **Deadline Alerts** | **Partially Implemented (Phase 2)** | Task scheduling with due dates/times, overdue tracking, background summary cron job, and email notification service. |
 | 5 | **Workload Analytics** | **Planned (Phase 3)** | Comprehensive visual reports and charts displaying employee productivity, task distribution, and velocity. |
@@ -135,7 +135,7 @@ TeamSync/
 │   │   ├── db/               # MongoDB connection lifecycle
 │   │   ├── jobs/             # Scheduled background jobs (weekly summary)
 │   │   ├── middleware/       # JWT auth, error handlers, request loggers
-│   │   ├── models/           # Mongoose schemas (User, Board, Task, Activity, Notification)
+│   │   ├── models/           # Mongoose schemas (User, Board, Task, ChatMessage, Activity, Notification)
 │   │   ├── repositories/     # Data access abstraction layer
 │   │   ├── routes/           # REST endpoint definitions
 │   │   ├── schemas/          # Zod validation schemas
@@ -147,11 +147,11 @@ TeamSync/
 ├── frontend/                 # React 19 single-page application
 │   ├── src/
 │   │   ├── api/              # Fetch API wrappers for REST endpoints
-│   │   ├── components/       # Reusable UI components (Board, Column, TaskCard, etc.)
+│   │   ├── components/       # Reusable UI components (Board, Column, TaskCard, TeamChat, etc.)
 │   │   ├── context/          # Context providers (Auth, Boards, Tasks, Socket, Users)
 │   │   ├── db/               # Local PouchDB instance & background sync loop
 │   │   ├── pages/            # View pages (BoardPage, Dashboard, MyTasks, Team, Auth)
-│   │   ├── styles/           # CSS design systems (light/dark themes)
+│   │   ├── styles/           # CSS design systems (light/dark themes, teamChat.css)
 │   │   └── utils/            # Formatting and column utilities
 │   └── index.html            # Application entry point
 │
@@ -162,7 +162,8 @@ TeamSync/
 1. **Authentication & Profile Module:** Secure registration, login, JWT token management, password reset flow, and avatar management.
 2. **Board & Project Management Module:** Creation, editing, and deletion of project boards with customizable columns and member invitation acceptance flows.
 3. **Live Kanban Engine:** Column drag-over indicators, Framer Motion card animations, and instant real-time synchronization across team members.
-4. **Offline Synchronization & OCC Engine:** Local IndexedDB caching, background polling fallback, queue processing, and conflict detection.
+4. **Team Chat Module:** Real-time project-wise communication via Socket.IO (`chat:message`), REST history endpoints, unread badge notifications, and modern drawer interface.
+5. **Offline Synchronization & OCC Engine:** Local IndexedDB caching, background polling fallback, queue processing, and conflict detection.
 5. **Team & Collaboration Module:** Member invitations, role permissions (owner vs assignee), activity audit trail, and presence indicators.
 
 ---

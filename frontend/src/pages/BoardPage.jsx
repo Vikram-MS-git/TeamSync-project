@@ -10,6 +10,7 @@ import { getColumns } from "../utils/columns";
 import Board from "../components/Board";
 import TaskDetailPanel from "../components/TaskDetailPanel";
 import BoardSettingsModal from "../components/BoardSettingsModal";
+import TeamChat from "../components/TeamChat.jsx";
 import { fetchBoardMembers } from "../api/boards.js";
 import { AUTH_BG } from "../assets/cdn.js";
 import UserAvatar from "../components/UserAvatar.jsx";
@@ -36,8 +37,23 @@ function BoardPage() {
   const [members, setMembers] = useState([]);
 
   const isOwner = !!board && board.ownerId === user?.id;
-  const { isConnected, joinBoard, leaveBoard } = useSocket() || {};
+  const { socket, isConnected, joinBoard, leaveBoard } = useSocket() || {};
   const onlineUserIds = usePresence(boardId);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleChatMessage = (msg) => {
+      if (msg.boardId === boardId && !isChatOpen && msg.senderId !== user?.id) {
+        setUnreadChatCount((c) => c + 1);
+      }
+    };
+    socket.on("chat:message", handleChatMessage);
+    return () => {
+      socket.off("chat:message", handleChatMessage);
+    };
+  }, [socket, boardId, isChatOpen, user?.id]);
 
   useEffect(() => {
     if (boardId && joinBoard) {
@@ -155,6 +171,55 @@ function BoardPage() {
             </button>
           )}
 
+          <button
+            type="button"
+            className="bp2-panel__status-btn"
+            onClick={() => {
+              setIsChatOpen((open) => {
+                if (!open) setUnreadChatCount(0);
+                return !open;
+              });
+            }}
+            title="Toggle Team Chat"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              flex: "0 0 auto",
+              width: "auto",
+              background: isChatOpen ? "rgba(139, 111, 242, 0.2)" : undefined,
+              borderColor: isChatOpen ? "#8b6ff2" : undefined,
+              position: "relative",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Team Chat
+            {unreadChatCount > 0 && !isChatOpen && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 18,
+                  height: 18,
+                  padding: "0 5px",
+                  borderRadius: 9,
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  marginLeft: 2,
+                }}
+              >
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
+
           <div className="bp2-header__people">
             {assignees.map((name) => {
               const member = members.find((m) => m.name === name);
@@ -253,6 +318,17 @@ function BoardPage() {
             onClose={() => setSelectedTaskId(null)}
             isOwner={isOwner}
             currentUserId={user?.id}
+            members={members}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isChatOpen && (
+          <TeamChat
+            boardId={boardId}
+            boardName={board.name}
+            onClose={() => setIsChatOpen(false)}
             members={members}
           />
         )}
