@@ -285,42 +285,78 @@ TeamSync includes automated unit and integration tests across both frontend and 
 ### Run Backend Tests (Jest)
 ```powershell
 cd backend
-npm.cmd test -- tests/sockets.test.js
-npm.cmd test -- tests/tasks.test.js
+npm.cmd test
 ```
-*Coverage includes:* JWT handshake authentication, board room scoping, `task:created`/`task:updated`/`task:deleted` broadcasts, presence updates, and optimistic concurrency version conflict rejections.
+*Coverage includes (14 test suites, 111 passing tests):* Health, JWT auth protection, user profile/avatar/preferences, board CRUD, member roles and invitations, task CRUD, presence indicators, optimistic concurrency versioning (OCC 409 conflict handling), file attachment upload/download/delete (local disk and Cloudinary fallback), workload analytics, and smart assignment recommendation algorithms.
 
 ### Run Frontend Tests (Vitest)
 ```powershell
 cd frontend
 npm.cmd test
 ```
-*Coverage includes:* TaskCard rendering, TeamPage member invitations, and TaskConflictBanner conflict resolution.
+*Coverage includes (10 test suites, 26 passing tests):* Landing HomePage, responsive Navbar horizontal navigation, TaskCard rendering, CreateTaskModal with Smart Task Assignment recommendations, TeamChat live communication drawer, WorkloadAnalyticsChart KPI metrics, TaskConflictBanner side-by-side comparison, OfflineBanner status detection and manual sync, PouchDB synchronization, and TeamPage member management.
 
 ---
 
-## 12. Screenshots Section
+## 12. Modern UI/UX SaaS Redesign
+
+TeamSync features a commercial SaaS design system with horizontal navigation:
+
+1. **Modern Horizontal Top Navigation (`Navbar.jsx`):**
+   - Brand mark with glowing icon and active page indicators.
+   - Core navigation: Home, Dashboard, Project Boards, My Tasks, Team Directory, and Settings.
+   - Quick Search dialog trigger (`/`), theme toggle (Light / Dark SaaS), and unread notifications dropdown with board invitation accept/decline actions.
+   - User profile dropdown with avatar, email, and one-click logout.
+   - Responsive collapsible mobile navigation drawer.
+
+2. **Executive Dashboard (`DashboardPage.jsx`):**
+   - Dynamic time-based greeting and real-time project health overview.
+   - 6 KPI metric cards: Total Projects, Total Tasks, Completed Tasks, Pending Tasks, Overdue Tasks, and Sprint Completion Velocity %.
+   - Embedded Workload Analytics chart visualization.
+   - Upcoming deadlines (<7 days) and overdue task warning list.
+   - Real-time recent activity stream and quick board launcher cards.
+
+3. **Project Boards Page (`BoardsListPage.jsx`):**
+   - Search toolbar and filter tabs: "All Projects", "Created by Me", and "Shared with Me".
+   - Project cards featuring completion progress bars, task count indicators, team member avatars, and owner badges.
+   - New project board modal trigger and board settings management.
+
+4. **My Tasks Workflow Page (`MyTasksPage.jsx`):**
+   - Personal task aggregator filtered by assignee.
+   - Quick filter tabs: "All", "To Do", "In Progress", and "Completed".
+   - Sort dropdown by Due Date, Title, or Project Board.
+   - Deadline urgency badges (`⚠️ Overdue`, `⏰ Due Soon (<24h)`).
+   - Instant task progression buttons ("Start", "Mark Done ✓") and attachment counters.
+
+5. **Team & Workload Page (`TeamPage.jsx`):**
+   - Board member roster with live online/offline presence indicators.
+   - Real-time member workload status pills (`Available`, `Optimal Workload`, `High Workload`, `Overdue`).
+   - 3-column personal metrics: Assigned Tasks, Completed, and Overdue.
+   - Searchable user directory with instant board invitation dispatches.
+
+6. **Account & Workspace Settings (`SettingsPage.jsx`):**
+   - Profile avatar upload with interactive cropping (`ImageCropModal`) and Cloudinary storage.
+   - Account detail updates (Name, Email).
+   - Theme mode toggle, timezone selection, and calendar date format settings.
+   - Granular notification preferences (Task assignments, board activity, weekly digest).
+   - Comprehensive keyboard shortcuts reference and workspace data export (JSON backup).
+
+---
+
+## 13. Screenshots Section
 
 | View | Description | Preview Placeholder |
 |---|---|---|
-| **Login & Signup** | Secure JWT authentication with animated showcase panel | `![TeamSync Auth](docs/screenshots/auth.png)` |
+| **Landing & Showcase** | Modern public introduction with feature cards and interactive preview | `![TeamSync Landing](docs/screenshots/home.png)` |
+| **Executive Dashboard** | 6 KPI statistics, workload charts, upcoming deadlines, and activity stream | `![TeamSync Dashboard](docs/screenshots/dashboard.png)` |
 | **Live Kanban Board** | Real-time columns, drag-and-drop cards, and presence indicators | `![TeamSync Board](docs/screenshots/board.png)` |
-| **Task Drawer & Details** | Full task inspector with status, assignee, and due date | `![TeamSync Task Detail](docs/screenshots/task_detail.png)` |
-| **Conflict Resolution** | Visual comparison banner when concurrent edits are detected | `![TeamSync Conflict](docs/screenshots/conflict.png)` |
-| **Team Management** | Team member roster with invitation management | `![TeamSync Team](docs/screenshots/team.png)` |
+| **Team Chat Drawer** | Project-wise instant communication with unread message badges | `![TeamSync Chat](docs/screenshots/chat.png)` |
+| **Workload Analytics** | Interactive member task distribution, completion rates, and backlog charts | `![TeamSync Analytics](docs/screenshots/analytics.png)` |
+| **Task Attachments** | Multi-format file sharing with direct download and storage management | `![TeamSync Attachments](docs/screenshots/attachments.png)` |
+| **Conflict Resolution** | Visual OCC comparison modal for concurrent edit resolution | `![TeamSync Conflict](docs/screenshots/conflict.png)` |
+| **Team Directory** | Workload status tags, live member presence, and invitation panel | `![TeamSync Team](docs/screenshots/team.png)` |
 
 *(Place screenshots into the `docs/screenshots/` folder to view rendered previews.)*
-
----
-
-## 13. Future Enhancements Roadmap
-
-- [ ] **Phase 1 (Finalizing):** Team Chat with real-time project-wise communication channels and notification badges.
-- [ ] **Phase 2:** Smart Task Assignment algorithm balancing workload based on member active task counts.
-- [ ] **Phase 2:** Proactive deadline alert popups and email triggers for overdue tasks.
-- [ ] **Phase 3:** Workload Analytics dashboard featuring task velocity, completion distributions, and productivity charts.
-- [ ] **Phase 3:** Task attachment file sharing with Cloudinary document viewers.
-- [ ] **Phase 4:** Advanced PouchDB multi-master conflict resolution and offline queue auditing.
 
 ---
 

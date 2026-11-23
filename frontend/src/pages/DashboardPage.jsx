@@ -1,7 +1,18 @@
-// DashboardPage.jsx
+// frontend/src/pages/DashboardPage.jsx
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import {
+  FolderKanban,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
+  Layers,
+  ArrowRight,
+  Calendar,
+  Sparkles,
+} from "lucide-react";
 import { useTasks } from "../context/TasksContext";
 import { useBoards } from "../context/BoardsContext";
 import { useAuth } from "../context/AuthContext";
@@ -9,43 +20,30 @@ import { fetchActivity } from "../api/activity.js";
 import { columnTitle } from "../utils/columns";
 import { AUTH_BG } from "../assets/cdn.js";
 import WorkloadAnalyticsChart from "../components/WorkloadAnalyticsChart.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 import "../styles/dashboardV2.css";
 
 const STATUSES = ["To Do", "Doing", "Done"];
-
-const STAT_ICONS = {
-  Total: { className: "dashv2-stat--total", icon: "layers" },
-  "To Do": { className: "dashv2-stat--todo", icon: "circle" },
-  Doing: { className: "dashv2-stat--doing", icon: "clock" },
-  Done: { className: "dashv2-stat--done", icon: "check" },
-};
-
 const MotionLink = motion.create(Link);
 
-const FRAME_VARIANTS = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
-};
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
-const STAT_CONTAINER_VARIANTS = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const STAT_ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
-};
-
-const LIST_CONTAINER_VARIANTS = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } },
-};
-
-const LIST_ITEM_VARIANTS = {
-  hidden: { opacity: 0, x: -8 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.2 } },
-};
+function timeAgo(isoString) {
+  if (!isoString) return "";
+  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function useActivity() {
   const [activity, setActivity] = useState([]);
@@ -56,7 +54,7 @@ function useActivity() {
     let cancelled = false;
     fetchActivity()
       .then((data) => {
-        if (!cancelled) setActivity(data);
+        if (!cancelled && Array.isArray(data)) setActivity(data);
       })
       .catch((err) => {
         if (!cancelled) setError(err.message);
@@ -70,39 +68,6 @@ function useActivity() {
   }, []);
 
   return { activity, isLoading, error };
-}
-
-function StatIcon({ name }) {
-  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
-  if (name === "layers") {
-    return (
-      <svg {...common}>
-        <polygon points="12 2 2 7 12 12 22 7 12 2" />
-        <polyline points="2 17 12 22 22 17" />
-        <polyline points="2 12 12 17 22 12" />
-      </svg>
-    );
-  }
-  if (name === "circle") {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
-  }
-  if (name === "clock") {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="9" />
-        <polyline points="12 7 12 12 15.5 14" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
 }
 
 function formatActivityMessage(message, boards) {
@@ -121,9 +86,9 @@ function formatActivityMessage(message, boards) {
 }
 
 function DashboardPage() {
-  const { boards } = useBoards();
-  const tasks = useTasks();
-  const { user } = useAuth();
+  const { boards = [] } = useBoards() || {};
+  const tasks = useTasks() || [];
+  const { user } = useAuth() || {};
   const { activity, isLoading: activityLoading, error: activityError } = useActivity();
 
   const total = tasks.length;
@@ -135,14 +100,99 @@ function DashboardPage() {
     return acc;
   }, {});
 
-  const donePct = total ? Math.round((counts["Done"] / total) * 100) : 0;
+  const doneCount = counts["Done"] || 0;
+  const pendingCount = (counts["To Do"] || 0) + (counts["Doing"] || 0);
+  const donePct = total ? Math.round((doneCount / total) * 100) : 0;
   const myTasks = tasks.filter((t) => t.assigneeId === user?.id);
 
-  const statCards = [
-    { label: "Total tasks", value: total, detail: "Across all boards", ...STAT_ICONS.Total },
-    { label: "To Do", value: counts["To Do"], detail: "Pending action", ...STAT_ICONS["To Do"] },
-    { label: "In Progress", value: counts["Doing"], detail: "Currently active", ...STAT_ICONS.Doing },
-    { label: "Completed", value: `${counts["Done"]} (${donePct}%)`, detail: "Finished tasks", ...STAT_ICONS.Done },
+  // Parse real deadlines and overdue tasks
+  const now = Date.now();
+  const overdueTasksList = [];
+  const upcomingDeadlinesList = [];
+
+  for (const t of tasks) {
+    const board = boards.find((b) => b.id === t.boardId);
+    const colName = columnTitle(board, t.columnId);
+    const isDone = colName === "Done";
+    if (isDone || !t.dueDate || t.dueDate === "No date") continue;
+
+    let d = null;
+    if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(t.dueDate)) {
+      d = new Date(t.dueDate);
+    } else if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(t.dueDate)) {
+      d = new Date(`${t.dueDate} ${new Date().getFullYear()}`);
+    } else if (/\d/.test(t.dueDate)) {
+      d = new Date(t.dueDate);
+    }
+
+    if (d && !isNaN(d.getTime())) {
+      const diff = d.getTime() - now;
+      if (diff < 0) {
+        overdueTasksList.push({ ...t, boardName: board?.name || "Project", dueDateObj: d });
+      } else if (diff <= 7 * 24 * 3600 * 1000) {
+        upcomingDeadlinesList.push({ ...t, boardName: board?.name || "Project", dueDateObj: d });
+      }
+    }
+  }
+
+  upcomingDeadlinesList.sort((a, b) => a.dueDateObj - b.dueDateObj);
+  overdueTasksList.sort((a, b) => a.dueDateObj - b.dueDateObj);
+
+  const kpis = [
+    {
+      label: "Total Projects",
+      value: boards.length,
+      detail: "Active workspaces",
+      Icon: FolderKanban,
+      color: "#3b82f6",
+      bg: "rgba(59, 130, 246, 0.12)",
+      border: "rgba(59, 130, 246, 0.25)",
+    },
+    {
+      label: "Total Tasks",
+      value: total,
+      detail: "Across all boards",
+      Icon: Layers,
+      color: "#8b5cf6",
+      bg: "rgba(139, 92, 246, 0.12)",
+      border: "rgba(139, 92, 246, 0.25)",
+    },
+    {
+      label: "Completed Tasks",
+      value: doneCount,
+      detail: `${donePct}% overall velocity`,
+      Icon: CheckCircle2,
+      color: "#10b981",
+      bg: "rgba(16, 185, 129, 0.12)",
+      border: "rgba(16, 185, 129, 0.25)",
+    },
+    {
+      label: "Pending Tasks",
+      value: pendingCount,
+      detail: "To Do & In Progress",
+      Icon: Clock,
+      color: "#f59e0b",
+      bg: "rgba(245, 158, 11, 0.12)",
+      border: "rgba(245, 158, 11, 0.25)",
+    },
+    {
+      label: "Overdue Tasks",
+      value: overdueTasksList.length,
+      detail: "Requires urgent action",
+      Icon: AlertTriangle,
+      color: "#ef4444",
+      bg: "rgba(239, 68, 68, 0.12)",
+      border: "rgba(239, 68, 68, 0.25)",
+    },
+    {
+      label: "Completion Rate",
+      value: `${donePct}%`,
+      detail: "Sprint target pace",
+      Icon: TrendingUp,
+      color: "#06b6d4",
+      bg: "rgba(6, 182, 212, 0.12)",
+      border: "rgba(6, 182, 212, 0.25)",
+    },
   ];
 
   return (
@@ -152,167 +202,388 @@ function DashboardPage() {
       <div className="dashv2-glow dashv2-glow--a" aria-hidden="true" />
       <div className="dashv2-glow dashv2-glow--b" aria-hidden="true" />
 
-      <motion.div className="dashv2-frame" variants={FRAME_VARIANTS} initial="hidden" animate="show">
-        
-        {/* Hero Welcome Banner */}
+      <motion.div
+        className="dashv2-frame"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Welcome Header */}
         <div className="dashv2-hero">
           <div className="dashv2-hero__content">
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <Sparkles size={18} color="#818cf8" />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                TeamSync Workspace Overview
+              </span>
+            </div>
             <h1 className="dashv2-hero__title">
-              Welcome back, <span className="dashv2-hero__name">{user?.name || "Member"}</span>! 👋
+              {getTimeGreeting()}, <span className="dashv2-hero__name">{user?.name || "Member"}</span>! 👋
             </h1>
             <p className="dashv2-hero__subtitle">
-              Here is your high-level overview across all active workspace boards and tasks.
+              Monitor team productivity, track active project velocity, and stay ahead of upcoming sprint deadlines.
             </p>
           </div>
           <div className="dashv2-hero__actions">
             <Link to="/" className="dashv2-hero__btn dashv2-hero__btn--primary">
-              View All Boards
+              <FolderKanban size={15} />
+              <span>Browse Boards</span>
             </Link>
             <Link to="/my-tasks" className="dashv2-hero__btn dashv2-hero__btn--ghost">
-              My Tasks ({myTasks.length})
+              <CheckCircle2 size={15} />
+              <span>My Tasks ({myTasks.length})</span>
             </Link>
           </div>
         </div>
 
-        {/* 4 Metric Stats Grid */}
-        <motion.div className="dashv2-stats" variants={STAT_CONTAINER_VARIANTS} initial="hidden" animate="show">
-          {statCards.map((stat) => (
-            <motion.div
-              className={`dashv2-stat ${stat.className}`}
-              key={stat.label}
-              variants={STAT_ITEM_VARIANTS}
-              whileHover={{ y: -4, scale: 1.01 }}
-            >
-              <div className="dashv2-stat__icon">
-                <StatIcon name={stat.icon} />
-              </div>
-              <div className="dashv2-stat__info">
-                <span className="dashv2-stat__value">{stat.value}</span>
-                <span className="dashv2-stat__label">{stat.label}</span>
-                <span className="dashv2-stat__detail">{stat.detail}</span>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+        {/* 6 Metric KPI Stats Grid */}
+        <div className="dashv2-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+          {kpis.map((kpi) => {
+            const { label, value, detail, Icon, color, bg, border } = kpi;
+            return (
+              <motion.div
+                key={label}
+                className="dashv2-stat"
+                whileHover={{ y: -3 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  background: "rgba(17, 24, 39, 0.75)",
+                  backdropFilter: "blur(14px)",
+                  WebkitBackdropFilter: "blur(14px)",
+                  border: `1px solid ${border}`,
+                  borderRadius: 14,
+                  padding: "16px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    background: bg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: color,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", lineHeight: 1.1 }}>
+                    {value}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginTop: 2 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                    {detail}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
 
-        {/* Workload Analytics & Employee Productivity */}
+        {/* Workload Analytics & Team Productivity Chart */}
         <WorkloadAnalyticsChart />
 
-        {/* Full-Bleed 3-Column Section Grid */}
-        <div className="dashv2-grid-3">
+        {/* 2-Column Dashboard Sections */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 20 }}>
           
-          {/* Section 1: Active Boards */}
-          <section className="dashv2-panel">
-            <div className="dashv2-panel__header">
-              <h2 className="dashv2-panel__title">Active Boards</h2>
-              <span className="dashv2-panel__badge">{boards.length}</span>
+          {/* Column A: Upcoming Deadlines & Overdue Tasks */}
+          <section
+            className="dashv2-panel"
+            style={{
+              background: "rgba(17, 24, 39, 0.75)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 16,
+              padding: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Clock size={18} color="#f59e0b" />
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc", margin: 0 }}>
+                  Deadlines &amp; Urgent Tasks
+                </h2>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: 12,
+                  background: overdueTasksList.length > 0 ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
+                  color: overdueTasksList.length > 0 ? "#f87171" : "#94a3b8",
+                  border: overdueTasksList.length > 0 ? "1px solid rgba(239, 68, 68, 0.3)" : "none",
+                }}
+              >
+                {overdueTasksList.length} overdue · {upcomingDeadlinesList.length} upcoming
+              </span>
             </div>
-            <motion.div className="dashv2-boards-list" variants={LIST_CONTAINER_VARIANTS} initial="hidden" animate="show">
-              {boards.map((board) => {
-                const bTasks = tasks.filter((t) => t.boardId === board.id);
-                const bDone = bTasks.filter((t) => columnTitle(board, t.columnId) === "Done").length;
-                const bPct = bTasks.length ? Math.round((bDone / bTasks.length) * 100) : 0;
 
-                return (
-                  <MotionLink
-                    to={`/boards/${board.id}`}
-                    key={board.id}
-                    variants={LIST_ITEM_VARIANTS}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.99 }}
-                    className="dashv2-board-card"
+            {overdueTasksList.length === 0 && upcomingDeadlinesList.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px 16px", color: "#94a3b8", fontSize: 13 }}>
+                <CheckCircle2 size={32} color="#10b981" style={{ margin: "0 auto 8px" }} />
+                <p style={{ margin: 0, fontWeight: 600, color: "#e2e8f0" }}>No urgent deadlines</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12 }}>All tasks are on track and completed on time.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Overdue Items */}
+                {overdueTasksList.slice(0, 4).map((task) => (
+                  <Link
+                    key={task.id}
+                    to={`/tasks/${task.id}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "rgba(239, 68, 68, 0.08)",
+                      border: "1px solid rgba(239, 68, 68, 0.25)",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
                   >
-                    <div className="dashv2-board-card__top">
-                      <span className="dashv2-board-card__name">{board.name}</span>
-                      <span className="dashv2-board-card__count">{bTasks.length} tasks</span>
-                    </div>
-                    <p className="dashv2-board-card__desc">{board.description || "No description."}</p>
-                    <div className="dashv2-board-card__progress">
-                      <div className="dashv2-board-card__track">
-                        <div className="dashv2-board-card__fill" style={{ width: `${bPct}%` }} />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f8fafc" }}>
+                        {task.title}
                       </div>
-                      <span className="dashv2-board-card__pct">{bPct}% done</span>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                        {task.boardName} • {task.assignee || "Unassigned"}
+                      </div>
                     </div>
-                  </MotionLink>
-                );
-              })}
-            </motion.div>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "rgba(239, 68, 68, 0.2)",
+                        color: "#f87171",
+                      }}
+                    >
+                      ⚠️ Overdue ({task.dueDate})
+                    </span>
+                  </Link>
+                ))}
+
+                {/* Upcoming Items */}
+                {upcomingDeadlinesList.slice(0, 4).map((task) => (
+                  <Link
+                    key={task.id}
+                    to={`/tasks/${task.id}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "rgba(245, 158, 11, 0.08)",
+                      border: "1px solid rgba(245, 158, 11, 0.22)",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f8fafc" }}>
+                        {task.title}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                        {task.boardName} • {task.assignee || "Unassigned"}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "rgba(245, 158, 11, 0.2)",
+                        color: "#fbbf24",
+                      }}
+                    >
+                      ⏰ Due {task.dueDate}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </section>
 
-          {/* Section 2: My Assigned Tasks */}
-          <section className="dashv2-panel">
-            <div className="dashv2-panel__header">
-              <h2 className="dashv2-panel__title">My Tasks</h2>
-              <span className="dashv2-panel__badge">{myTasks.length}</span>
+          {/* Column B: Recent Activity Stream */}
+          <section
+            className="dashv2-panel"
+            style={{
+              background: "rgba(17, 24, 39, 0.75)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 16,
+              padding: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <TrendingUp size={18} color="#818cf8" />
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc", margin: 0 }}>
+                  Recent Team Activity
+                </h2>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "3px 8px",
+                  borderRadius: 12,
+                  background: "rgba(255, 255, 255, 0.08)",
+                  color: "#94a3b8",
+                }}
+              >
+                {activity.length} events
+              </span>
             </div>
-            <div className="dashv2-mytasks-wrap">
-              {myTasks.length === 0 ? (
-                <div className="dashv2-empty-state">
-                  <span className="dashv2-empty-state__icon">✓</span>
-                  <p>All caught up! No tasks assigned to you right now.</p>
-                </div>
-              ) : (
-                <motion.div className="dashv2-mytasks-list" variants={LIST_CONTAINER_VARIANTS} initial="hidden" animate="show">
-                  {myTasks.slice(0, 5).map((task) => {
-                    const board = boards.find((b) => b.id === task.boardId);
-                    const colName = columnTitle(board, task.columnId);
-                    return (
-                      <MotionLink
-                        to={`/tasks/${task.id}`}
-                        key={task.id}
-                        variants={LIST_ITEM_VARIANTS}
-                        whileHover={{ y: -2 }}
-                        className="dashv2-task-card"
-                      >
-                        <div className="dashv2-task-card__top">
-                          <span className="dashv2-task-card__board">{board?.name || "Board"}</span>
-                          <span className={`dashv2-task-card__status dashv2-task-card__status--${colName.toLowerCase().replace(" ", "-")}`}>
-                            {colName}
-                          </span>
-                        </div>
-                        <h3 className="dashv2-task-card__title">{task.title}</h3>
-                        {task.dueDate && (
-                          <span className="dashv2-task-card__due">
-                            📅 {task.dueDate}
-                          </span>
-                        )}
-                      </MotionLink>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </div>
-          </section>
 
-          {/* Section 3: Recent Activity */}
-          <section className="dashv2-panel">
-            <div className="dashv2-panel__header">
-              <h2 className="dashv2-panel__title">Recent Activity</h2>
-              <span className="dashv2-panel__badge">{activity.length}</span>
-            </div>
-            <div className="dashv2-activity-wrap">
-              {activityLoading ? (
-                <p className="dashv2-activity__empty">Loading activity…</p>
-              ) : activityError ? (
-                <p className="dashv2-activity__empty">Couldn't load activity: {activityError}</p>
-              ) : activity.length === 0 ? (
-                <p className="dashv2-activity__empty">No activity recorded yet.</p>
-              ) : (
-                <motion.ul className="dashv2-activity" variants={LIST_CONTAINER_VARIANTS} initial="hidden" animate="show">
-                  {activity.map((item) => (
-                    <motion.li key={item.id} className="dashv2-activity__item" variants={LIST_ITEM_VARIANTS}>
-                      <span className="dashv2-activity__dot" />
-                      <div className="dashv2-activity__content">
-                        <p className="dashv2-activity__msg">{formatActivityMessage(item.message, boards)}</p>
-                      </div>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-              )}
-            </div>
+            {activityLoading ? (
+              <p style={{ textAlign: "center", padding: 24, color: "#94a3b8", fontSize: 13 }}>
+                Loading real-time audit activity…
+              </p>
+            ) : activityError ? (
+              <p style={{ color: "#f87171", fontSize: 12 }}>Couldn't load activity: {activityError}</p>
+            ) : activity.length === 0 ? (
+              <p style={{ textAlign: "center", padding: 24, color: "#94a3b8", fontSize: 13 }}>
+                No audit activity recorded yet.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 340, overflowY: "auto" }}>
+                {activity.slice(0, 8).map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: "rgba(255, 255, 255, 0.03)",
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#818cf8",
+                        marginTop: 5,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 12.5, color: "#f1f5f9", lineHeight: 1.4 }}>
+                        {formatActivityMessage(item.message, boards)}
+                      </p>
+                      <span style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 2, display: "block" }}>
+                        {timeAgo(item.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
         </div>
+
+        {/* Active Workspace Boards Grid */}
+        <section
+          style={{
+            background: "rgba(17, 24, 39, 0.75)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: 16,
+            padding: 22,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FolderKanban size={18} color="#6366f1" />
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc", margin: 0 }}>
+                Active Project Boards
+              </h2>
+            </div>
+            <Link
+              to="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "#818cf8",
+                textDecoration: "none",
+              }}
+            >
+              <span>View All</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+            {boards.slice(0, 6).map((board) => {
+              const bTasks = tasks.filter((t) => t.boardId === board.id);
+              const bDone = bTasks.filter((t) => columnTitle(board, t.columnId) === "Done").length;
+              const bPct = bTasks.length ? Math.round((bDone / bTasks.length) * 100) : 0;
+
+              return (
+                <Link
+                  key={board.id}
+                  to={`/boards/${board.id}`}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: 12,
+                    padding: "14px 16px",
+                    textDecoration: "none",
+                    color: "inherit",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>{board.name}</span>
+                    <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}>{bTasks.length} tasks</span>
+                  </div>
+                  <p style={{ margin: "0 0 12px", fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {board.description || "Project collaboration board"}
+                  </p>
+                  <div>
+                    <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${bPct}%`, height: "100%", background: "linear-gradient(90deg, #6366f1, #10b981)", borderRadius: 3 }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+                      <span>{bDone} completed</span>
+                      <span style={{ color: "#4ade80", fontWeight: 600 }}>{bPct}%</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
       </motion.div>
     </div>
   );

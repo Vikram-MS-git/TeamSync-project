@@ -1,8 +1,7 @@
 // App.jsx
 import { useState } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
-import TopBar from "./components/TopBar";
+import Navbar from "./components/Navbar";
 import CommandPalette from "./components/CommandPalette";
 import { TaskConflictBanner } from "./components/TaskConflictBanner";
 import { OfflineBanner } from "./components/OfflineBanner";
@@ -69,25 +68,22 @@ function App() {
       <NotificationsProvider>
       <TasksProvider>
         <UsersProvider>
-          <div className="app">
-            <Sidebar />
-            <div className="app__content">
-              <TopBar onOpenSearch={() => setIsSearchOpen(true)} />
-              <div className={`main ${isDashboard ? "main--dark" : ""}`}>
-                <Routes>
-                  <Route path="/" element={<BoardsListPage />} />
-                  <Route path="/home" element={<HomePage />} />
-                  <Route path="/boards" element={<BoardsListPage />} />
-                  <Route path="/boards/:boardId" element={<BoardPage />} />
-                  <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/my-tasks" element={<MyTasksPage />} />
-                  <Route path="/team" element={<TeamPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </div>
-            </div>
+          <div className="app app--horizontal">
+            <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
+            <main className={`app__main ${isDashboard ? "app__main--dashboard" : ""}`}>
+              <Routes>
+                <Route path="/" element={<BoardsListPage />} />
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/boards" element={<BoardsListPage />} />
+                <Route path="/boards/:boardId" element={<BoardPage />} />
+                <Route path="/tasks/:id" element={<TaskDetailPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/my-tasks" element={<MyTasksPage />} />
+                <Route path="/team" element={<TeamPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </main>
             <CommandPalette isOpen={isSearchOpen} onOpenChange={setIsSearchOpen} />
             <TaskConflictBanner />
             <OfflineBanner />

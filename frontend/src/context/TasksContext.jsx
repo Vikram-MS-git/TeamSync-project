@@ -231,17 +231,17 @@ async function patchLocalTask(taskId, patch, showToast, errorMessage) {
 }
 
 export function useTasks() {
-  return useContext(TasksStateContext).tasks;
+  return useContext(TasksStateContext)?.tasks || [];
 }
 
 export function useTaskConflicts() {
-  return useContext(TasksStateContext).conflicts;
+  return useContext(TasksStateContext)?.conflicts || [];
 }
 
 export function useIsOnline() {
-  return useContext(TasksStateContext).isOnline;
+  return useContext(TasksStateContext)?.isOnline ?? true;
 }
 
 export function useTasksActions() {
-  return useContext(TasksActionsContext);
+  return useContext(TasksActionsContext) || {};
 }

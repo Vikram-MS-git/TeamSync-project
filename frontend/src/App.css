@@ -84,6 +84,22 @@ body {
   min-height: 100vh;
 }
 
+.app--horizontal {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--cb-bg);
+}
+
+.app__main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .app__content {
   flex: 1;
   min-width: 0;

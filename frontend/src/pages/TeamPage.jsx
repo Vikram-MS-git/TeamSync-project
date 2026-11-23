@@ -1,10 +1,26 @@
-// TeamPage.jsx
+// frontend/src/pages/TeamPage.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Users,
+  Search,
+  UserPlus,
+  Shield,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Sparkles,
+  ChevronDown,
+  X,
+  Mail,
+} from "lucide-react";
 import { useBoards } from "../context/BoardsContext";
 import { useAuth } from "../context/AuthContext";
+import { useTasks } from "../context/TasksContext";
 import { useToast } from "../context/ToastContext";
+import { usePresence } from "../context/SocketContext";
 import { searchUsers } from "../api/users.js";
+import { columnTitle } from "../utils/columns.js";
 import { AUTH_BG } from "../assets/cdn.js";
 import {
   fetchBoardStats,
@@ -15,12 +31,12 @@ import {
 } from "../api/boards.js";
 import UserAvatar from "../components/UserAvatar.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
+
 const SEARCH_DEBOUNCE_MS = 300;
 
 function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
-
   const selectedBoard = boards.find((b) => b.id === selectedBoardId);
 
   useEffect(() => {
@@ -34,30 +50,25 @@ function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading
   }, []);
 
   return (
-    <div className="team-select-container" ref={containerRef} style={{ position: "relative", minWidth: 220 }}>
+    <div ref={containerRef} style={{ position: "relative", minWidth: 240 }}>
       <button
         type="button"
-        className={`team-custom-select ${isOpen ? "team-custom-select--open" : ""}`}
         onClick={() => !isLoading && boards.length > 0 && setIsOpen((prev) => !prev)}
         disabled={isLoading || boards.length === 0}
         style={{
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: 10,
           padding: "9px 14px",
-          borderRadius: 12,
-          background: "rgba(255, 255, 255, 0.07)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          borderRadius: 10,
+          background: "rgba(255, 255, 255, 0.05)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
           color: "#ffffff",
           cursor: isLoading || boards.length === 0 ? "not-allowed" : "pointer",
           width: "100%",
-          justifyContent: "space-between",
-          fontSize: 14,
+          fontSize: 13.5,
           fontWeight: 600,
-          transition: "all 0.15s ease",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
@@ -66,7 +77,7 @@ function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading
               width: 24,
               height: 24,
               borderRadius: 6,
-              background: "linear-gradient(135deg, #8b6ff2 0%, #6366f1 100%)",
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
               color: "#ffffff",
               fontSize: 11,
               fontWeight: 800,
@@ -82,41 +93,25 @@ function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading
             {selectedBoard ? selectedBoard.name : isLoading ? "Loading boards…" : "Select a board"}
           </span>
         </div>
-        <motion.svg
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ flexShrink: 0, color: "#94a3b8" }}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </motion.svg>
+        <ChevronDown size={15} color="#94a3b8" />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
             style={{
               position: "absolute",
-              top: "calc(100% + 8px)",
+              top: "calc(100% + 6px)",
               left: 0,
               right: 0,
               zIndex: 100,
-              borderRadius: 14,
-              background: "rgba(18, 20, 32, 0.94)",
-              backdropFilter: "blur(20px) saturate(160%)",
-              WebkitBackdropFilter: "blur(20px) saturate(160%)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
+              borderRadius: 12,
+              background: "#111827",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.5)",
               padding: 6,
               maxHeight: 240,
@@ -139,51 +134,19 @@ function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading
                     justifyContent: "space-between",
                     width: "100%",
                     padding: "8px 12px",
-                    borderRadius: 10,
+                    borderRadius: 8,
                     border: "none",
-                    background: isSelected ? "rgba(139, 111, 242, 0.22)" : "transparent",
-                    color: isSelected ? "#c084fc" : "#e2e8f0",
-                    fontSize: 13.5,
+                    background: isSelected ? "rgba(99, 102, 241, 0.18)" : "transparent",
+                    color: isSelected ? "#818cf8" : "#cbd5e1",
+                    fontSize: 13,
                     fontWeight: isSelected ? 700 : 500,
                     cursor: "pointer",
                     textAlign: "left",
-                    transition: "all 0.12s ease",
-                    marginBottom: 2,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 6,
-                        background: isSelected ? "#8b6ff2" : "rgba(255, 255, 255, 0.1)",
-                        color: "#ffffff",
-                        fontSize: 10,
-                        fontWeight: 800,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {b.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {b.name}
-                    </span>
-                  </div>
-                  {isSelected && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {b.name}
+                  </span>
                 </button>
               );
             })}
@@ -197,25 +160,19 @@ function BoardSelectDropdown({ boards, selectedBoardId, onSelectBoard, isLoading
 function TeamPage() {
   const [query, setQuery] = useState("");
   const showToast = useToast();
-  const { user } = useAuth();
-  const { boards, isLoading: boardsLoading } = useBoards();
+  const { user } = useAuth() || {};
+  const { boards = [], isLoading: boardsLoading } = useBoards() || {};
+  const allTasks = useTasks() || [];
 
-  // The team is scoped to one board at a time: pick a board first, then
-  // see (and, if you own it, manage) who has access to it.
   const [boardId, setBoardId] = useState("");
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersError, setMembersError] = useState(null);
   const [stats, setStats] = useState({});
 
-  // Pending invites this board's owner has already sent, keyed by the
-  // invited person's user id — so a search hit can show "Invited"
-  // instead of offering to invite them again.
   const [pendingInvites, setPendingInvites] = useState({});
   const [invitingId, setInvitingId] = useState(null);
 
-  // Search-as-you-type results from the whole user directory (name or
-  // email), for the "not a member yet? invite them" flow.
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -225,7 +182,8 @@ function TeamPage() {
   }, [boardsLoading, boards, boardId]);
 
   const board = boards.find((b) => b.id === boardId);
-  const isOwner = !!board && board.ownerId === user?.id;
+  const isOwner = !!board && (board.ownerId === user?.id || String(board.owner) === String(user?.id));
+  const onlineUserIds = usePresence(boardId) || [];
 
   const loadMembers = useCallback(() => {
     if (!boardId) return;
@@ -270,8 +228,7 @@ function TeamPage() {
       .catch(() => setStats({}));
   }, [boardId]);
 
-  // Search the whole user directory by name/email while typing, so the
-  // owner can find and invite someone who isn't a member yet.
+  // Directory Search for invitations
   useEffect(() => {
     const trimmed = query.trim();
     if (!isOwner || trimmed.length < 2) {
@@ -344,198 +301,362 @@ function TeamPage() {
   const memberIds = new Set(members.map((m) => m.id));
   const invitableResults = searchResults.filter((u) => !memberIds.has(u.id));
 
+  // Board tasks for completed calculation
+  const boardTasks = allTasks.filter((t) => t.boardId === boardId);
+
   return (
     <motion.div
       className="page-shell bp2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.25 }}
+      style={{ padding: "32px 24px", maxWidth: 1440, margin: "0 auto", width: "100%" }}
     >
       <div className="bp2-bg" style={{ backgroundImage: `url(${AUTH_BG})` }} aria-hidden="true" />
       <div className="bp2-bg-overlay" aria-hidden="true" />
-      <div className="bp2-glow bp2-glow--a" aria-hidden="true" />
-      <div className="bp2-glow bp2-glow--b" aria-hidden="true" />
 
-      <motion.div
-        className="bp2-frame"
-        initial={{ opacity: 0, y: 15, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        <div className="team-page__header">
-          <div className="team-page__titles">
-            <h1 className="bp2-title" style={{ fontSize: 24, fontWeight: 800, margin: "0 0 4px" }}>Team Directory</h1>
-            <p className="bp2-subtitle" style={{ marginBottom: 0 }}>
-              {board
-                ? `${members.length} ${members.length === 1 ? "member" : "members"} on "${board.name}".`
-                : "Select a board to manage team members."}
-            </p>
+      {/* Header */}
+      <div style={{ marginBottom: 28, display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <Sparkles size={16} color="#818cf8" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Collaborators &amp; Roles
+            </span>
           </div>
-
-          <div className="team-controls">
-            {/* Board Selector */}
-            <div className="team-control-group">
-              <span className="team-control-label">Board</span>
-              <BoardSelectDropdown
-                boards={boards}
-                selectedBoardId={boardId}
-                onSelectBoard={setBoardId}
-                isLoading={boardsLoading}
-              />
-            </div>
-
-            {/* Member Search */}
-            <div className="team-control-group">
-              <span className="team-control-label">Filter & Invite</span>
-              <div className="team-search-box">
-                <svg className="team-control-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="7" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  type="text"
-                  className="team-search-input"
-                  placeholder="Search name or email…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-                {query && (
-                  <button type="button" className="team-search-clear" onClick={() => setQuery("")} aria-label="Clear search">
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f8fafc", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            Team Directory
+          </h1>
+          <p style={{ margin: 0, fontSize: 14, color: "#94a3b8" }}>
+            {board
+              ? `${members.length} ${members.length === 1 ? "member" : "members"} collaborating on "${board.name}".`
+              : "Select a project board to manage team members and workloads."}
+          </p>
         </div>
 
-      {boardsLoading && <p className="page-shell__subtitle">Loading boards…</p>}
+        {/* Board Selector & Member Filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <BoardSelectDropdown
+            boards={boards}
+            selectedBoardId={boardId}
+            onSelectBoard={setBoardId}
+            isLoading={boardsLoading}
+          />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 10, padding: "8px 12px" }}>
+            <Search size={14} color="#94a3b8" />
+            <input
+              type="text"
+              placeholder="Search or invite by email…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#f8fafc",
+                fontSize: 13,
+                outline: "none",
+                minWidth: 160,
+              }}
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 0 }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {boardsLoading && <p style={{ color: "#94a3b8" }}>Loading boards…</p>}
       {!boardsLoading && boards.length === 0 && (
-        <p className="page-shell__subtitle">You don't own or belong to any boards yet.</p>
+        <p style={{ color: "#94a3b8" }}>You don't own or belong to any boards yet.</p>
       )}
 
-      {membersLoading && <p className="page-shell__subtitle">Loading team…</p>}
-      {membersError && <p className="ft-error" style={{ maxWidth: 320 }}>Couldn't load team: {membersError}</p>}
+      {membersLoading && <p style={{ color: "#94a3b8" }}>Loading team…</p>}
+      {membersError && (
+        <p style={{ color: "#f87171", padding: 12, borderRadius: 8, background: "rgba(239, 68, 68, 0.12)" }}>
+          Couldn't load team: {membersError}
+        </p>
+      )}
 
+      {/* Member Cards Grid */}
       {!membersLoading && !membersError && board && (
         <>
-          <div className="team-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
             {filteredMembers.map((member) => {
               const memberStats = stats[member.id] ?? { taskCount: 0, overdueCount: 0 };
               const { taskCount, overdueCount } = memberStats;
+              const isMemberOnline = onlineUserIds.includes(member.id);
+
+              // Calculate completed vs pending tasks for this member on this board
+              const mTasks = boardTasks.filter((t) => t.assigneeId === member.id || t.assignee === member.name);
+              const completedCount = mTasks.filter((t) => columnTitle(board, t.columnId) === "Done").length;
+              const pendingCount = Math.max(0, taskCount - completedCount);
               const onTrackPct = taskCount ? Math.round(((taskCount - overdueCount) / taskCount) * 100) : 100;
 
-              return (
-                <div className="team-card" key={member.id}>
-                  {/* Top Ambient Glow */}
-                  <div className="team-card__glow" aria-hidden="true" />
+              // Workload Badge
+              let workloadLabel = "Available";
+              let workloadColor = "#10b981";
+              let workloadBg = "rgba(16, 185, 129, 0.12)";
+              let workloadBorder = "rgba(16, 185, 129, 0.25)";
 
+              if (overdueCount > 0) {
+                workloadLabel = `${overdueCount} Overdue`;
+                workloadColor = "#ef4444";
+                workloadBg = "rgba(239, 68, 68, 0.15)";
+                workloadBorder = "rgba(239, 68, 68, 0.3)";
+              } else if (pendingCount >= 4) {
+                workloadLabel = "High Workload";
+                workloadColor = "#f59e0b";
+                workloadBg = "rgba(245, 158, 11, 0.15)";
+                workloadBorder = "rgba(245, 158, 11, 0.3)";
+              } else if (pendingCount >= 2) {
+                workloadLabel = "Optimal Workload";
+                workloadColor = "#818cf8";
+                workloadBg = "rgba(129, 140, 248, 0.15)";
+                workloadBorder = "rgba(129, 140, 248, 0.3)";
+              }
+
+              return (
+                <motion.div
+                  key={member.id}
+                  whileHover={{ y: -3 }}
+                  transition={{ duration: 0.15 }}
+                  style={{
+                    background: "rgba(17, 24, 39, 0.8)",
+                    backdropFilter: "blur(14px)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: 16,
+                    padding: "22px 20px",
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
+                  }}
+                >
+                  {/* Remove Member Button (Owner only) */}
                   {isOwner && member.role !== "owner" && (
                     <button
                       type="button"
-                      className="team-card__kick"
                       onClick={() => handlePromptKick(member.id, member.name)}
                       title={`Remove ${member.name}`}
+                      style={{
+                        position: "absolute",
+                        top: 14,
+                        right: 14,
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderRadius: 6,
+                        color: "#94a3b8",
+                        cursor: "pointer",
+                        padding: "3px 6px",
+                        fontSize: 12,
+                      }}
                     >
                       ×
                     </button>
                   )}
 
-                  {/* Avatar */}
-                  <div className="team-card__avatar-wrap">
-                    <UserAvatar user={member} size={64} className="team-card__avatar-img" />
-                    <span className="team-card__status-dot" aria-hidden="true" />
-                  </div>
+                  <div>
+                    {/* Top: Avatar + Name + Online Status */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                      <div style={{ position: "relative" }}>
+                        <UserAvatar user={member} size={50} />
+                        <span
+                          title={isMemberOnline ? "Online now" : "Offline"}
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            right: 0,
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            background: isMemberOnline ? "#10b981" : "#64748b",
+                            border: "2px solid #111827",
+                          }}
+                        />
+                      </div>
 
-                  {/* User Info */}
-                  <div className="team-card__info">
-                    <div className="team-card__name-row">
-                      <h3 className="team-card__name">{member.name}</h3>
-                      <span className="team-card__role-badge">
-                        {member.role === "owner" ? "Owner" : "Member"}
-                      </span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#f8fafc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {member.name}
+                          </h3>
+                        </div>
+                        <p style={{ margin: "2px 0 6px", fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {member.email}
+                        </p>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              background: member.role === "owner" ? "rgba(99, 102, 241, 0.18)" : "rgba(255, 255, 255, 0.06)",
+                              color: member.role === "owner" ? "#818cf8" : "#cbd5e1",
+                              border: member.role === "owner" ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
+                            }}
+                          >
+                            {member.role === "owner" ? "👑 Owner" : "Member"}
+                          </span>
+
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 600,
+                              padding: "2px 7px",
+                              borderRadius: 4,
+                              background: isMemberOnline ? "rgba(16, 185, 129, 0.12)" : "rgba(255, 255, 255, 0.04)",
+                              color: isMemberOnline ? "#4ade80" : "#94a3b8",
+                            }}
+                          >
+                            {isMemberOnline ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p className="team-card__email">{member.email}</p>
-                  </div>
 
-                  {/* Progress Bar Section */}
-                  <div className="team-card__progress-sec">
-                    <div className="team-card__progress-track">
+                    {/* Workload Pill */}
+                    <div style={{ marginBottom: 16 }}>
                       <div
-                        className="team-card__progress-fill"
-                        style={{ width: `${onTrackPct}%` }}
-                      />
-                    </div>
-                    <p className="team-card__progress-subtext">
-                      <span className="team-card__progress-highlight">{onTrackPct}%</span> on track
-                    </p>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="team-card__divider" />
-
-                  {/* Task Statistics */}
-                  <div className="team-card__stats-grid">
-                    <div className="team-card__stat-col">
-                      <span className="team-card__stat-val">{taskCount}</span>
-                      <span className="team-card__stat-lbl">tasks</span>
-                    </div>
-                    <div className="team-card__stat-col">
-                      <span
-                        className={`team-card__stat-val ${
-                          overdueCount > 0 ? "team-card__stat-val--rose" : ""
-                        }`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: "4px 10px",
+                          borderRadius: 20,
+                          background: workloadBg,
+                          color: workloadColor,
+                          border: `1px solid ${workloadBorder}`,
+                        }}
                       >
-                        {overdueCount}
-                      </span>
-                      <span className="team-card__stat-lbl">overdue</span>
+                        <span>Workload: {workloadLabel}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+
+                  {/* Task Metrics Grid */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 8,
+                      paddingTop: 14,
+                      borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "8px 6px", borderRadius: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#f8fafc" }}>{taskCount}</div>
+                      <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 2 }}>Assigned</div>
+                    </div>
+                    <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "8px 6px", borderRadius: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#4ade80" }}>{completedCount}</div>
+                      <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 2 }}>Completed</div>
+                    </div>
+                    <div style={{ background: "rgba(255, 255, 255, 0.03)", padding: "8px 6px", borderRadius: 8 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: overdueCount > 0 ? "#f87171" : "#cbd5e1" }}>
+                        {overdueCount}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 2 }}>Overdue</div>
+                    </div>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
 
-          {/* Only the owner can search the wider directory and invite —
-              matches show up here, separate from the existing-members grid
-              above, since these people aren't on the board yet. */}
+          {/* User Directory Invitation Section (Owner only) */}
           {isOwner && query.trim().length >= 2 && (
-            <div className="team-invite-results">
-              <h3 className="team-invite-results__title">Invite to this board</h3>
-              {searchLoading && <p className="page-shell__subtitle">Searching…</p>}
+            <div
+              style={{
+                marginTop: 28,
+                padding: 22,
+                borderRadius: 16,
+                background: "rgba(17, 24, 39, 0.8)",
+                border: "1px solid rgba(99, 102, 241, 0.3)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <UserPlus size={18} color="#818cf8" />
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f8fafc", margin: 0 }}>
+                  Invite New Collaborators to "{board.name}"
+                </h3>
+              </div>
+
+              {searchLoading && <p style={{ color: "#94a3b8", fontSize: 13 }}>Searching user directory…</p>}
               {!searchLoading && invitableResults.length === 0 && (
-                <p className="page-shell__subtitle">No matching users to invite.</p>
+                <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>
+                  No matching registered users found outside of this board.
+                </p>
               )}
-              {!searchLoading &&
-                invitableResults.map((u) => {
-                  const pending = pendingInvites[u.id];
-                  return (
-                    <div className="team-invite-row" key={u.id}>
-                      <UserAvatar user={u} size={32} />
-                      <div className="team-invite-row__info">
-                        <span className="team-invite-row__name">{u.name}</span>
-                        <span className="team-invite-row__email">{u.email}</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="team-invite-row__btn"
-                        disabled={!!pending || invitingId === u.id}
-                        onClick={() => handleInvite(u.email, u.id)}
+
+              {!searchLoading && invitableResults.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {invitableResults.map((u) => {
+                    const pending = pendingInvites[u.id];
+                    return (
+                      <div
+                        key={u.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.06)",
+                        }}
                       >
-                        {pending ? "Invited" : invitingId === u.id ? "Inviting…" : "Invite"}
-                      </button>
-                    </div>
-                  );
-                })}
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <UserAvatar user={u} size={32} />
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#f8fafc" }}>{u.name}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8" }}>{u.email}</div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={!!pending || invitingId === u.id}
+                          onClick={() => handleInvite(u.email, u.id)}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 6,
+                            background: pending ? "rgba(255, 255, 255, 0.08)" : "#4f46e5",
+                            color: "#ffffff",
+                            border: "none",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: pending || invitingId === u.id ? "default" : "pointer",
+                          }}
+                        >
+                          {pending ? "Invited ✓" : invitingId === u.id ? "Inviting…" : "Invite Member"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </>
       )}
-      </motion.div>
 
       <ConfirmModal
-        isOpen={!!memberToKick}
+        isOpen={Boolean(memberToKick)}
         onClose={() => setMemberToKick(null)}
         onConfirm={executeKick}
         title="Remove Team Member"
