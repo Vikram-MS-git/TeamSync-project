@@ -36,8 +36,8 @@ const FEATURES = [
   {
     id: "chat",
     title: "Team Chat",
-    status: "Phase 1",
-    statusClass: "hp-card__status-tag--planned",
+    status: "Live",
+    statusClass: "hp-card__status-tag--live",
     Icon: MessageSquare,
     description:
       "Real-time project-wise communication channels between team members with persistent conversation history.",
@@ -45,8 +45,8 @@ const FEATURES = [
   {
     id: "assignment",
     title: "Smart Task Assignment",
-    status: "Phase 2",
-    statusClass: "hp-card__status-tag--planned",
+    status: "Live",
+    statusClass: "hp-card__status-tag--live",
     Icon: Sparkles,
     description:
       "Intelligent workload-aware recommendation engine that analyzes pending tasks to suggest the optimal assignee.",
@@ -54,8 +54,8 @@ const FEATURES = [
   {
     id: "deadlines",
     title: "Deadline Alerts",
-    status: "Active",
-    statusClass: "hp-card__status-tag--active",
+    status: "Live",
+    statusClass: "hp-card__status-tag--live",
     Icon: Clock,
     description:
       "Proactive notifications, date/time scheduling, and automated weekly summaries to ensure no milestone is missed.",
@@ -63,8 +63,8 @@ const FEATURES = [
   {
     id: "analytics",
     title: "Workload Analytics",
-    status: "Phase 3",
-    statusClass: "hp-card__status-tag--planned",
+    status: "Live",
+    statusClass: "hp-card__status-tag--live",
     Icon: BarChart3,
     description:
       "Centralized visual charts displaying employee productivity, task completion distribution, and sprint velocity.",
@@ -72,8 +72,8 @@ const FEATURES = [
   {
     id: "files",
     title: "File Sharing",
-    status: "Active",
-    statusClass: "hp-card__status-tag--active",
+    status: "Live",
+    statusClass: "hp-card__status-tag--live",
     Icon: Paperclip,
     description:
       "Cloudinary and Multer powered storage allowing teams to upload documents and attach assets directly to tasks.",
