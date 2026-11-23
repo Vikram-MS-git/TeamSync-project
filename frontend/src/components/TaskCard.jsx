@@ -69,13 +69,12 @@ function TaskCard({ id, title, assignee, assigneeId, members, dueDate, columnTit
           <UserAvatar user={member} name={assignee} size={22} className="bp2-card__assignee" />
         </div>
         <span
-          className={`bp2-card__due ${
-            urgency === "overdue"
+          className={`bp2-card__due ${urgency === "overdue"
               ? "bp2-card__due--overdue"
               : urgency === "upcoming"
-              ? "bp2-card__due--upcoming"
-              : ""
-          }`}
+                ? "bp2-card__due--upcoming"
+                : ""
+            }`}
           style={{
             color: urgency === "overdue" ? "#f87171" : urgency === "upcoming" ? "#fbbf24" : undefined,
             fontWeight: urgency ? 600 : undefined,
