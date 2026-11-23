@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTasks, useTasksActions } from "../context/TasksContext";
@@ -7,9 +7,28 @@ import { useBoards } from "../context/BoardsContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { fetchBoardMembers } from "../api/boards.js";
+import { BASE_URL } from "../api/client.js";
 import { avatarColor } from "../utils/avatarColor";
 import { getColumns } from "../utils/columns";
 import { AUTH_BG } from "../assets/cdn.js";
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function getFileIcon(filename = "") {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  if (["pdf"].includes(ext)) return "📄";
+  if (["doc", "docx"].includes(ext)) return "📝";
+  if (["xls", "xlsx", "csv"].includes(ext)) return "📊";
+  if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "🖼️";
+  if (["zip", "tar", "gz", "rar"].includes(ext)) return "📦";
+  return "📎";
+}
 
 const STATUS_ACCENT = {
   "To Do": "var(--cb-violet)",
@@ -27,12 +46,40 @@ function TaskDetailPage() {
   const tasks = useTasks();
   const { boards } = useBoards();
   const { user } = useAuth();
-  const { updateTask, deleteTask, moveTask } = useTasksActions();
+  const { updateTask, deleteTask, moveTask, uploadAttachment, removeAttachment } = useTasksActions();
   const showToast = useToast();
   const [members, setMembers] = useState([]);
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const task = tasks.find((t) => String(t.id) === id);
   const board = boards.find((b) => b.id === task?.boardId);
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File size must be under 10MB", "error");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      await uploadAttachment(task.id, file);
+    } catch {
+      // toast in context
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveAttachment(attId) {
+    try {
+      await removeAttachment(task.id, attId);
+    } catch {
+      // toast in context
+    }
+  }
 
   useEffect(() => {
     if (!board) return;
@@ -185,6 +232,159 @@ function TaskDetailPage() {
             disabled={!canEdit}
             onChange={(e) => canEdit && updateTask(task.id, { description: e.target.value })}
           />
+        </div>
+
+        {/* Attachments Section */}
+        <div className="task-detail__field" style={{ marginTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <span className="task-detail__label" style={{ margin: 0 }}>
+              Attachments ({task.attachments?.length || 0})
+            </span>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.zip,.png,.jpg,.jpeg,.gif,.webp,.svg"
+            />
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background: "rgba(139, 111, 242, 0.15)",
+                border: "1px solid rgba(139, 111, 242, 0.3)",
+                color: "#a78bfa",
+                padding: "5px 12px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: isUploading ? "not-allowed" : "pointer",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+              {isUploading ? "Uploading..." : "Attach File"}
+            </button>
+          </div>
+
+          {(!task.attachments || task.attachments.length === 0) ? (
+            <div
+              style={{
+                border: "1px dashed rgba(255, 255, 255, 0.12)",
+                borderRadius: 8,
+                padding: "16px 12px",
+                textAlign: "center",
+                color: "#94a3b8",
+                fontSize: 12.5,
+              }}
+            >
+              No documents attached yet. Click "Attach File" to share documents or assets.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {task.attachments.map((att) => {
+                const fullUrl = att.url?.startsWith("http") ? att.url : `${BASE_URL}${att.url}`;
+                const canDeleteAtt = isOwner || (att.uploadedBy && att.uploadedBy === user?.id);
+
+                return (
+                  <div
+                    key={att.id || att.name}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                      <span style={{ fontSize: 20 }}>{getFileIcon(att.name)}</span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <a
+                          href={fullUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={att.name}
+                          style={{
+                            color: "#93c5fd",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={`Download ${att.name}`}
+                        >
+                          {att.name}
+                        </a>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                          {formatBytes(att.size)} • {att.uploadedByName || "Team Member"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <a
+                        href={fullUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={att.name}
+                        title="Download file"
+                        style={{
+                          color: "#94a3b8",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 5,
+                          borderRadius: 4,
+                          background: "rgba(255,255,255,0.06)",
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      </a>
+                      {canDeleteAtt && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAttachment(att.id)}
+                          title="Remove attachment"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#ef4444",
+                            cursor: "pointer",
+                            padding: 5,
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {canEdit && (

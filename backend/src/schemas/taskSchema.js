@@ -13,6 +13,7 @@ export const createTaskSchema = z.object({
   description: z.string().trim().max(2000).default(""),
   boardId: objectId,
   columnId: objectId,
+  attachments: z.array(z.any()).optional(),
 });
 
 // All fields optional for PATCH, EXCEPT `version` — the client must
@@ -20,4 +21,5 @@ export const createTaskSchema = z.object({
 // else edited the task first (optimistic concurrency).
 export const updateTaskSchema = createTaskSchema.partial().extend({
   version: z.number().int().min(0, "version is required"),
+  attachments: z.array(z.any()).optional(),
 });

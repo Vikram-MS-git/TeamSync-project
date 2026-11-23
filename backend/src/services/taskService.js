@@ -7,6 +7,7 @@ import * as boardService from "./boardService.js";
 import { sendEmail } from "../utils/emailService.js";
 import * as notificationService from "./notificationService.js";
 import { NotFoundError, ForbiddenError } from "../utils/AppError.js";
+import { uploadDocumentStream } from "../config/cloudinary.js";
 
 // Only fields a non-owner assignee is allowed to change when moving their
 // own card between columns. Anything else in the patch is an editing
@@ -269,4 +270,74 @@ export async function getSmartAssignmentRecommendations(boardId, userId) {
     if (a.totalTasksCount !== b.totalTasksCount) return a.totalTasksCount - b.totalTasksCount;
     return a.name.localeCompare(b.name);
   });
+}
+
+export async function addAttachment(taskId, file, actorId) {
+  const task = await taskRepository.findById(taskId);
+  if (!task) throw new NotFoundError("Task");
+
+  const board = await boardRepository.findById(task.boardId);
+  if (!board) throw new NotFoundError("Board");
+  boardService.assertMember(board, actorId);
+
+  const actor = await userRepository.findById(actorId);
+
+  const uploadResult = await uploadDocumentStream(file.buffer, file.originalname);
+
+  const attachmentData = {
+    name: file.originalname,
+    url: uploadResult.url,
+    publicId: uploadResult.publicId,
+    size: file.size || uploadResult.size,
+    mimeType: file.mimetype || "application/octet-stream",
+    uploadedBy: actorId,
+    uploadedByName: actor?.name || "Team Member",
+    uploadedAt: new Date(),
+  };
+
+  const updated = await taskRepository.addAttachment(taskId, attachmentData);
+
+  await activityService.logActivity({
+    action: "updated",
+    actorId,
+    boardId: task.boardId,
+    taskId: task.id,
+    taskTitle: task.title,
+    details: { attachmentAdded: file.originalname },
+  });
+
+  return updated;
+}
+
+export async function deleteAttachment(taskId, attachmentId, actorId) {
+  const task = await taskRepository.findById(taskId);
+  if (!task) throw new NotFoundError("Task");
+
+  const board = await boardRepository.findById(task.boardId);
+  if (!board) throw new NotFoundError("Board");
+  boardService.assertMember(board, actorId);
+
+  const attachment = task.attachments?.find(
+    (a) => (a._id?.toString?.() || a.id) === String(attachmentId)
+  );
+  if (!attachment) throw new NotFoundError("Attachment");
+
+  const isOwner = board.owner.toString() === String(actorId);
+  const isUploader = attachment.uploadedBy && attachment.uploadedBy.toString() === String(actorId);
+  if (!isOwner && !isUploader) {
+    throw new ForbiddenError("Only the board owner or the uploader can remove this attachment");
+  }
+
+  const updated = await taskRepository.removeAttachment(taskId, attachmentId);
+
+  await activityService.logActivity({
+    action: "updated",
+    actorId,
+    boardId: task.boardId,
+    taskId: task.id,
+    taskTitle: task.title,
+    details: { attachmentRemoved: attachment.name },
+  });
+
+  return updated;
 }

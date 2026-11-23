@@ -1,6 +1,20 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
+const attachmentSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    publicId: { type: String },
+    size: { type: Number, default: 0 },
+    mimeType: { type: String, default: "application/octet-stream" },
+    uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    uploadedByName: { type: String, default: "Team Member" },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const taskSchema = new Schema({
   title: { type: String, required: true, trim: true, maxlength: 200 },
   // `assignee` stays a display-name string (kept for backward compatibility
@@ -16,6 +30,7 @@ const taskSchema = new Schema({
   boardId: { type: Schema.Types.ObjectId, ref: "Board", required: true, index: true },
   columnId: { type: Schema.Types.ObjectId, required: true, index: true },
   version: { type: Number, required: true, default: 0 },
+  attachments: [attachmentSchema],
 }, { timestamps: true });
 
 // Same transform as User.js / Board.js: _id -> id, drop __v, so the
@@ -25,6 +40,19 @@ function transform(doc, ret) {
   delete ret._id;
   delete ret.__v;
   if (ret.assigneeId) ret.assigneeId = ret.assigneeId.toString();
+  if (Array.isArray(ret.attachments)) {
+    ret.attachments = ret.attachments.map((att) => ({
+      id: att._id ? att._id.toString() : att.id,
+      name: att.name,
+      url: att.url,
+      publicId: att.publicId,
+      size: att.size,
+      mimeType: att.mimeType,
+      uploadedBy: att.uploadedBy ? att.uploadedBy.toString() : undefined,
+      uploadedByName: att.uploadedByName,
+      uploadedAt: att.uploadedAt,
+    }));
+  }
   return ret;
 }
 taskSchema.set("toJSON", { transform });

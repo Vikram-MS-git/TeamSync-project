@@ -203,3 +203,35 @@ export async function remove(id) {
     throw err;
   }
 }
+
+export async function addAttachment(taskId, attachmentData) {
+  try {
+    return await Task.findByIdAndUpdate(
+      taskId,
+      {
+        $push: { attachments: attachmentData },
+        $inc: { version: 1 },
+      },
+      { new: true, runValidators: true }
+    );
+  } catch (err) {
+    if (err.name === "CastError") return null;
+    throw err;
+  }
+}
+
+export async function removeAttachment(taskId, attachmentId) {
+  try {
+    return await Task.findByIdAndUpdate(
+      taskId,
+      {
+        $pull: { attachments: { _id: attachmentId } },
+        $inc: { version: 1 },
+      },
+      { new: true, runValidators: true }
+    );
+  } catch (err) {
+    if (err.name === "CastError") return null;
+    throw err;
+  }
+}

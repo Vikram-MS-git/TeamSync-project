@@ -39,6 +39,9 @@ app.use(express.json({ limit: "100kb" }));
 app.use(requestId);
 app.use(requestLogger);
 
+// Static uploads directory (for local file sharing fallback)
+app.use("/uploads", express.static("uploads"));
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime(), db: getDbState() });
 });

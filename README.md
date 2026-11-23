@@ -44,7 +44,7 @@ TeamSync is built around eight foundational features. The current implementation
 | 3 | **Smart Task Assignment** | **Implemented** | Workload recommendation engine analyzing active/pending tasks per member (`/api/boards/:id/smart-assignment`), auto-selecting lowest-workload members with visual UI recommendation badges. |
 | 4 | **Deadline Alerts** | **Implemented** | Automated deadline checking engine, upcoming deadline alerts (<24h), overdue task alerts, in-app bell notifications, and real-time visual urgency badges on Kanban cards. |
 | 5 | **Workload Analytics** | **Implemented** | Comprehensive visual reports and charts displaying employee productivity, task distribution across team members, completion velocity, and pending backlogs (`/api/analytics/workspace` and `/api/boards/:id/analytics`). |
-| 6 | **File Sharing** | **Partially Implemented (Phase 3)** | Cloudinary and Multer integration pipeline for uploading documents and attaching assets to tasks. |
+| 6 | **File Sharing** | **Implemented** | Upload documents (PDF, Word, Excel, text, images, archives) and attach assets to tasks (`/api/tasks/:id/attachments`) with Cloudinary storage, local disk fallback, file size/type validation, download links, and delete controls. |
 | 7 | **Conflict Resolution** | **Implemented** | Optimistic concurrency control (OCC) using strict integer versioning (`409 Conflict`), featuring an interactive conflict-resolution modal. |
 | 8 | **Offline Synchronization** | **Implemented** | Local client-side PouchDB storage with background polling, immediate push queues, and live change-feed reconciliation. |
 

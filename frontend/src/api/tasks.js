@@ -26,3 +26,18 @@ export function deleteTask(id) {
 export function fetchTask(id) {
   return apiFetch(`/api/tasks/${id}`);
 }
+
+export function uploadTaskAttachment(taskId, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFetch(`/api/tasks/${taskId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function deleteTaskAttachment(taskId, attachmentId) {
+  return apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
+}

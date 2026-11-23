@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { tasksDB, toDoc, toTask, newLocalId } from "../db/pouchdb.js";
 import { pushPendingDocs, startSyncLoop, syncNow } from "../db/tasksSync.js";
+import * as tasksApi from "../api/tasks.js";
 import { useToast } from "./ToastContext.jsx";
 
 const TasksStateContext = createContext(null);
@@ -166,6 +167,40 @@ export function TasksProvider({ children }) {
     trySync();
   };
 
+  const uploadAttachment = async (taskId, file) => {
+    try {
+      const updated = await tasksApi.uploadTaskAttachment(taskId, file);
+      try {
+        const doc = await tasksDB.get(String(taskId));
+        await tasksDB.put(toDoc(updated, { _rev: doc._rev }));
+      } catch {
+        await tasksDB.put(toDoc(updated));
+      }
+      showToast(`Uploaded "${file.name}"`, "success");
+      return updated;
+    } catch (err) {
+      showToast(err.message || "Failed to upload attachment", "error");
+      throw err;
+    }
+  };
+
+  const removeAttachment = async (taskId, attachmentId) => {
+    try {
+      const updated = await tasksApi.deleteTaskAttachment(taskId, attachmentId);
+      try {
+        const doc = await tasksDB.get(String(taskId));
+        await tasksDB.put(toDoc(updated, { _rev: doc._rev }));
+      } catch {
+        await tasksDB.put(toDoc(updated));
+      }
+      showToast("Attachment removed", "success");
+      return updated;
+    } catch (err) {
+      showToast(err.message || "Failed to delete attachment", "error");
+      throw err;
+    }
+  };
+
   const visibleTasks = Array.from(tasksById.values())
     .filter((doc) => doc.pendingOp !== "delete")
     .map(toTask);
@@ -173,7 +208,7 @@ export function TasksProvider({ children }) {
   return (
     <TasksStateContext.Provider value={{ tasks: visibleTasks, conflicts, isOnline }}>
       <TasksActionsContext.Provider
-        value={{ addTask, moveTask, deleteTask, updateTask, resolveConflict }}
+        value={{ addTask, moveTask, deleteTask, updateTask, resolveConflict, uploadAttachment, removeAttachment }}
       >
         {children}
       </TasksActionsContext.Provider>

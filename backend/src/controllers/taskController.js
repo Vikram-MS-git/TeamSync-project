@@ -2,6 +2,7 @@
 import * as taskService from "../services/taskService.js";
 import { catchAsync } from "../utils/catchAsync.js";
 import { emitToBoard } from "../sockets/index.js";
+import { BadRequestError } from "../utils/AppError.js";
 
 export const listTasks = catchAsync(async (req, res) => {
   const tasks = await taskService.getAllTasks(req.user.id);
@@ -40,4 +41,19 @@ export const deleteTask = catchAsync(async (req, res) => {
 export const getSmartAssignmentRecommendations = catchAsync(async (req, res) => {
   const recommendations = await taskService.getSmartAssignmentRecommendations(req.params.id, req.user.id);
   res.json(recommendations);
+});
+
+export const uploadAttachment = catchAsync(async (req, res) => {
+  if (!req.file) {
+    throw new BadRequestError("No document or file was uploaded");
+  }
+  const task = await taskService.addAttachment(req.params.id, req.file, req.user.id);
+  emitToBoard(req.app.get("io"), task.boardId, "task:updated", { task, actorId: req.user.id });
+  res.status(201).json(task);
+});
+
+export const removeAttachment = catchAsync(async (req, res) => {
+  const task = await taskService.deleteAttachment(req.params.id, req.params.attachmentId, req.user.id);
+  emitToBoard(req.app.get("io"), task.boardId, "task:updated", { task, actorId: req.user.id });
+  res.json(task);
 });

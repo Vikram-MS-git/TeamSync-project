@@ -4,8 +4,8 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 // "created" / "moved" / "deleted" today — add more here if the team wants
-// richer feed events later (e.g. "commented", "assigned").
-const ACTIONS = ["created", "moved", "deleted"];
+// richer feed events later (e.g. "commented", "assigned", "updated", "attached").
+const ACTIONS = ["created", "moved", "deleted", "updated", "attached"];
 
 const activitySchema = new Schema(
   {
