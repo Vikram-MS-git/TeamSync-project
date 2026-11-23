@@ -13,6 +13,10 @@ export function fetchBoardStats(id) {
   return apiFetch(`/api/boards/${id}/stats`);
 }
 
+export function fetchSmartAssignment(id) {
+  return apiFetch(`/api/boards/${id}/smart-assignment`);
+}
+
 export function createBoard({ name, description }) {
   return apiFetch("/api/boards", {
     method: "POST",

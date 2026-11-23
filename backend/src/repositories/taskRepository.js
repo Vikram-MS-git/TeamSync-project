@@ -100,6 +100,11 @@ export async function findById(id) {
   }
 }
 
+// Returns raw tasks for a board specifically for workload calculation
+export async function getTasksByBoardId(boardId) {
+  return Task.find({ boardId }).select("assigneeId columnId title").lean();
+}
+
 // Same shape as getStatsByBoardId's per-assignee counts, but across every
 // board at once — this is what the weekly summary email uses, one query
 // covering every user rather than looping board-by-board.

@@ -36,3 +36,8 @@ export const deleteTask = catchAsync(async (req, res) => {
   emitToBoard(req.app.get("io"), boardId, "task:deleted", { id, boardId, actorId: req.user.id });
   res.status(204).end();
 });
+
+export const getSmartAssignmentRecommendations = catchAsync(async (req, res) => {
+  const recommendations = await taskService.getSmartAssignmentRecommendations(req.params.id, req.user.id);
+  res.json(recommendations);
+});

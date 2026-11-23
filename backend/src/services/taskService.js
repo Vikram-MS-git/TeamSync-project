@@ -194,3 +194,79 @@ export async function deleteTask(id, actorId) {
   // needs to tell the right board room what happened.
   return { id: task.id, boardId: task.boardId };
 }
+
+export async function getSmartAssignmentRecommendations(boardId, userId) {
+  const board = await boardService.getBoardForAccess(boardId);
+  boardService.assertMember(board, userId);
+
+  const members = await boardService.getMembers(boardId, userId);
+  const tasks = await taskRepository.getTasksByBoardId(board._id);
+
+  // Identify completed/done columns
+  const doneColumnIdSet = new Set(
+    (board.columns || [])
+      .filter((c) => c.title.toLowerCase().trim() === "done")
+      .map((c) => (c._id?.toString?.() ?? c.id))
+  );
+
+  const memberWorkloads = members.map((member) => {
+    const memberTasks = tasks.filter((t) => String(t.assigneeId) === String(member.id));
+    const completedTasksCount = memberTasks.filter((t) => doneColumnIdSet.has(String(t.columnId))).length;
+    const pendingTasksCount = memberTasks.length - completedTasksCount;
+    const totalTasksCount = memberTasks.length;
+
+    let workloadStatus = "Available";
+    if (pendingTasksCount >= 5) {
+      workloadStatus = "Heavy Workload";
+    } else if (pendingTasksCount >= 3) {
+      workloadStatus = "Moderate Workload";
+    } else if (pendingTasksCount >= 1) {
+      workloadStatus = "Low Workload";
+    }
+
+    return {
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      pendingTasksCount,
+      completedTasksCount,
+      totalTasksCount,
+      workloadStatus,
+    };
+  });
+
+  const minPending = memberWorkloads.reduce(
+    (min, m) => Math.min(min, m.pendingTasksCount),
+    memberWorkloads.length ? memberWorkloads[0].pendingTasksCount : 0
+  );
+
+  const recommendations = memberWorkloads.map((m) => {
+    const isRecommended = m.pendingTasksCount === minPending;
+    let recommendationReason = "";
+    if (isRecommended) {
+      if (m.pendingTasksCount === 0) {
+        recommendationReason = "Zero pending tasks (Optimal availability)";
+      } else if (m.pendingTasksCount === 1) {
+        recommendationReason = "Only 1 pending task (High capacity)";
+      } else {
+        recommendationReason = `Lowest pending workload (${m.pendingTasksCount} active tasks)`;
+      }
+    } else {
+      recommendationReason = `${m.pendingTasksCount} active tasks currently assigned`;
+    }
+
+    return {
+      ...m,
+      isRecommended,
+      recommendationReason,
+    };
+  });
+
+  return recommendations.sort((a, b) => {
+    if (a.isRecommended !== b.isRecommended) return a.isRecommended ? -1 : 1;
+    if (a.pendingTasksCount !== b.pendingTasksCount) return a.pendingTasksCount - b.pendingTasksCount;
+    if (a.totalTasksCount !== b.totalTasksCount) return a.totalTasksCount - b.totalTasksCount;
+    return a.name.localeCompare(b.name);
+  });
+}

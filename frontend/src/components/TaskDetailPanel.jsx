@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTasks, useTasksActions } from "../context/TasksContext";
 import { useBoards } from "../context/BoardsContext";
 import { useToast } from "../context/ToastContext";
 import { getColumns } from "../utils/columns";
+import { fetchSmartAssignment } from "../api/boards";
 import UserAvatar from "./UserAvatar.jsx";
 
 function TaskDetailPanel({ taskId, onClose, isOwner, currentUserId, members = [] }) {
@@ -10,9 +12,19 @@ function TaskDetailPanel({ taskId, onClose, isOwner, currentUserId, members = []
   const { boards } = useBoards();
   const { updateTask, deleteTask, moveTask } = useTasksActions();
   const showToast = useToast();
+  const [recommendations, setRecommendations] = useState([]);
 
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
+
+  useEffect(() => {
+    if (!task?.boardId) return;
+    fetchSmartAssignment(task.boardId)
+      .then((recs) => {
+        if (Array.isArray(recs)) setRecommendations(recs);
+      })
+      .catch(() => setRecommendations([]));
+  }, [task?.boardId]);
 
   const board = boards.find((b) => b.id === task.boardId);
   const columns = getColumns(board);
@@ -94,17 +106,37 @@ function TaskDetailPanel({ taskId, onClose, isOwner, currentUserId, members = []
         <div className="bp2-panel__field">
           <span className="bp2-panel__label">Assignee</span>
           {canEdit ? (
-            <select
-              className="bp2-panel__input"
-              value={task.assigneeId || ""}
-              onChange={(e) => handleAssigneeChange(e.target.value)}
-            >
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                className="bp2-panel__input"
+                value={task.assigneeId || ""}
+                onChange={(e) => handleAssigneeChange(e.target.value)}
+              >
+                {members.map((m) => {
+                  const rec = recommendations.find((r) => r.id === m.id);
+                  const label = rec
+                    ? `${m.name} ${rec.isRecommended ? "⭐ (Recommended · " : "("}${rec.pendingTasksCount} pending)`
+                    : m.name;
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
+              {recommendations.find((r) => r.isRecommended) && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#a78bfa",
+                    marginTop: 4,
+                    display: "block",
+                  }}
+                >
+                  ✨ Recommended: {recommendations.find((r) => r.isRecommended).name} ({recommendations.find((r) => r.isRecommended).recommendationReason})
+                </span>
+              )}
+            </>
           ) : (
             <div className="bp2-panel__assignee">
               <UserAvatar user={members.find((m) => m.id === task.assigneeId || m.name === task.assignee)} name={task.assignee} size={26} className="bp2-panel__avatar" />

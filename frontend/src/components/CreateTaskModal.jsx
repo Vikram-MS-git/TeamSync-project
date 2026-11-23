@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTasksActions } from "../context/TasksContext";
 import { useToast } from "../context/ToastContext";
+import { fetchSmartAssignment } from "../api/boards";
 import DateTimePicker from "./DateTimePicker";
 import { AUTH_BG } from "../assets/cdn.js";
 
@@ -15,21 +16,43 @@ function CreateTaskModal({ isOpen, onClose, boardId, columns = [], members = [],
   const [assigneeId, setAssigneeId] = useState(members[0]?.id || "");
   const [dueDate, setDueDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
   const titleRef = useRef(null);
-
 
   useEffect(() => {
     if (!isOpen) return;
     setTitle("");
     setDescription("");
     setColumnId(defaultColumnId || columns[0]?.id || "");
-    setAssigneeId(members[0]?.id || "");
     setDueDate("");
     setIsSubmitting(false);
+
+    // Fetch Smart Task Assignment recommendations based on current workloads
+    if (boardId) {
+      fetchSmartAssignment(boardId)
+        .then((recs) => {
+          if (Array.isArray(recs)) {
+            setRecommendations(recs);
+            const topRec = recs.find((r) => r.isRecommended);
+            if (topRec) {
+              setAssigneeId(topRec.id);
+            } else if (members[0]?.id) {
+              setAssigneeId(members[0].id);
+            }
+          }
+        })
+        .catch(() => {
+          setRecommendations([]);
+          if (members[0]?.id) setAssigneeId(members[0].id);
+        });
+    } else if (members[0]?.id) {
+      setAssigneeId(members[0].id);
+    }
+
     // Focus the title field once the modal has actually mounted.
     const t = setTimeout(() => titleRef.current?.focus(), 30);
     return () => clearTimeout(t);
-  }, [isOpen, defaultColumnId, columns, members]);
+  }, [isOpen, defaultColumnId, columns, members, boardId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,6 +134,52 @@ function CreateTaskModal({ isOpen, onClose, boardId, columns = [], members = [],
               />
             </div>
 
+            {/* Smart Task Assignment Recommendation Banner */}
+            {recommendations.find((r) => r.isRecommended) && (
+              <div
+                className="bp2-modal__smart-rec"
+                style={{
+                  background: "linear-gradient(135deg, rgba(139, 111, 242, 0.14) 0%, rgba(99, 102, 241, 0.14) 100%)",
+                  border: "1px solid rgba(139, 111, 242, 0.3)",
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  fontSize: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>✨</span>
+                  <span>
+                    <strong style={{ color: "#a78bfa" }}>Smart Recommendation: </strong>
+                    <strong>{recommendations.find((r) => r.isRecommended).name}</strong>{" "}
+                    <span style={{ opacity: 0.85 }}>({recommendations.find((r) => r.isRecommended).recommendationReason})</span>
+                  </span>
+                </div>
+                {assigneeId !== recommendations.find((r) => r.isRecommended).id && (
+                  <button
+                    type="button"
+                    style={{
+                      background: "#8b6ff2",
+                      color: "#fff",
+                      border: "none",
+                      padding: "3px 8px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                    onClick={() => setAssigneeId(recommendations.find((r) => r.isRecommended).id)}
+                  >
+                    Select
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="bp2-modal__row">
               <div className="bp2-modal__field">
                 <label className="bp2-modal__label" htmlFor="task-status">Status</label>
@@ -137,11 +206,17 @@ function CreateTaskModal({ isOpen, onClose, boardId, columns = [], members = [],
                   onChange={(e) => setAssigneeId(e.target.value)}
                 >
                   {members.length === 0 && <option value="">No members yet</option>}
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
+                  {members.map((m) => {
+                    const rec = recommendations.find((r) => r.id === m.id);
+                    const label = rec
+                      ? `${m.name} ${rec.isRecommended ? "⭐ (Recommended · " : "("}${rec.pendingTasksCount} pending)`
+                      : m.name;
+                    return (
+                      <option key={m.id} value={m.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
