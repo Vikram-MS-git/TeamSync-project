@@ -11,6 +11,7 @@ import Board from "../components/Board";
 import TaskDetailPanel from "../components/TaskDetailPanel";
 import BoardSettingsModal from "../components/BoardSettingsModal";
 import TeamChat from "../components/TeamChat.jsx";
+import WorkloadAnalyticsChart from "../components/WorkloadAnalyticsChart.jsx";
 import { fetchBoardMembers } from "../api/boards.js";
 import { AUTH_BG } from "../assets/cdn.js";
 import UserAvatar from "../components/UserAvatar.jsx";
@@ -41,6 +42,7 @@ function BoardPage() {
   const onlineUserIds = usePresence(boardId);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -220,6 +222,30 @@ function BoardPage() {
             )}
           </button>
 
+          <button
+            type="button"
+            className="bp2-panel__status-btn"
+            onClick={() => setIsAnalyticsOpen((open) => !open)}
+            title="Toggle Workload Analytics"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              flex: "0 0 auto",
+              width: "auto",
+              background: isAnalyticsOpen ? "rgba(99, 102, 241, 0.2)" : undefined,
+              borderColor: isAnalyticsOpen ? "#6366f1" : undefined,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Analytics
+          </button>
+
           <div className="bp2-header__people">
             {assignees.map((name) => {
               const member = members.find((m) => m.name === name);
@@ -331,6 +357,86 @@ function BoardPage() {
             onClose={() => setIsChatOpen(false)}
             members={members}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAnalyticsOpen && (
+          <>
+            <motion.div
+              className="bp2-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAnalyticsOpen(false)}
+              style={{ zIndex: 1200 }}
+            />
+            <div
+              className="bp2-modal"
+              role="dialog"
+              aria-modal="true"
+              style={{ zIndex: 1201, maxWidth: 960, width: "95vw", padding: 16 }}
+            >
+              <motion.div
+                className="bp2-modal__card"
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                transition={{ duration: 0.22 }}
+                style={{ maxHeight: "90vh", overflowY: "auto", padding: "24px" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 10,
+                        background: "rgba(99, 102, 241, 0.18)",
+                        border: "1px solid rgba(99, 102, 241, 0.35)",
+                        color: "#818cf8",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                      </svg>
+                    </div>
+                    <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+                      {board.name} – Analytics
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="bp2-modal__close"
+                    onClick={() => setIsAnalyticsOpen(false)}
+                    aria-label="Close"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "none",
+                      color: "#a3a3b8",
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      fontSize: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <WorkloadAnalyticsChart boardId={board.id} />
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>

@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as boardController from "../controllers/boardController.js";
 import * as chatController from "../controllers/chatController.js";
 import * as taskController from "../controllers/taskController.js";
+import * as analyticsController from "../controllers/analyticsController.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { validate } from "../middleware/validate.js";
 import { createBoardSchema, updateBoardSchema, inviteMemberSchema } from "../schemas/boardSchema.js";
@@ -19,6 +20,7 @@ router.post("/:id/members", validate(inviteMemberSchema), boardController.invite
 router.get("/:id/invitations", boardController.listPendingInvitations);
 router.delete("/:id/members/:userId", boardController.kickMember);
 router.get("/:id/smart-assignment", taskController.getSmartAssignmentRecommendations);
+router.get("/:id/analytics", analyticsController.getBoardAnalytics);
 router.get("/:id/chat", chatController.getChatMessages);
 router.post("/:id/chat", validate(sendChatMessageSchema), chatController.sendChatMessage);
 router.get("/:id", boardController.getBoard);

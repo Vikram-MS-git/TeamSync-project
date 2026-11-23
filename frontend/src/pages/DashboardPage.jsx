@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { fetchActivity } from "../api/activity.js";
 import { columnTitle } from "../utils/columns";
 import { AUTH_BG } from "../assets/cdn.js";
+import WorkloadAnalyticsChart from "../components/WorkloadAnalyticsChart.jsx";
 import "../styles/dashboardV2.css";
 
 const STATUSES = ["To Do", "Doing", "Done"];
@@ -193,6 +194,9 @@ function DashboardPage() {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Workload Analytics & Employee Productivity */}
+        <WorkloadAnalyticsChart />
 
         {/* Full-Bleed 3-Column Section Grid */}
         <div className="dashv2-grid-3">
