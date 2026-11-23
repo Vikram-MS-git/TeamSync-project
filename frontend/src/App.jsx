@@ -22,6 +22,9 @@ import TaskDetailPage from "./pages/TaskDetailPage";
 import DashboardPage from "./pages/DashboardPage";
 import MyTasksPage from "./pages/MyTasksPage";
 import TeamPage from "./pages/TeamPage";
+import ChatPage from "./pages/ChatPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -80,6 +83,9 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/my-tasks" element={<MyTasksPage />} />
                 <Route path="/team" element={<TeamPage />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

@@ -53,6 +53,9 @@ describe("Navbar Horizontal Component", () => {
     expect(screen.getByText("Boards")).toBeInTheDocument();
     expect(screen.getByText("My Tasks")).toBeInTheDocument();
     expect(screen.getByText("Team")).toBeInTheDocument();
+    expect(screen.getByText("Chat")).toBeInTheDocument();
+    expect(screen.getByText("Notifications")).toBeInTheDocument();
+    expect(screen.getByText("Analytics")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 

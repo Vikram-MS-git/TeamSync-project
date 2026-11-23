@@ -8,6 +8,8 @@ import {
   Kanban,
   CheckSquare,
   Users,
+  MessageSquare,
+  BarChart3,
   Settings,
   Search,
   Bell,
@@ -33,6 +35,9 @@ const NAV_ITEMS = [
   { label: "Boards", to: "/", end: true, Icon: Kanban },
   { label: "My Tasks", to: "/my-tasks", Icon: CheckSquare },
   { label: "Team", to: "/team", Icon: Users },
+  { label: "Chat", to: "/chat", Icon: MessageSquare },
+  { label: "Notifications", to: "/notifications", Icon: Bell },
+  { label: "Analytics", to: "/analytics", Icon: BarChart3 },
   { label: "Settings", to: "/settings", Icon: Settings },
 ];
 
@@ -346,6 +351,23 @@ export default function Navbar({ onOpenSearch }) {
                       ))}
                     </div>
                   )}
+
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255, 255, 255, 0.08)", textAlign: "center" }}>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotifOpen(false)}
+                      style={{
+                        fontSize: 11.5,
+                        color: "#818cf8",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        display: "inline-block",
+                        padding: "4px 8px",
+                      }}
+                    >
+                      View All in Notification Center →
+                    </Link>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
