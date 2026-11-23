@@ -1,0 +1,558 @@
+/* ==========================================================================
+   redesign.css — TeamSync modern UI layer
+   Loaded LAST (see main.jsx) so it overrides the older glassmorphism styles.
+   Direction: clean, flat, Linear/Notion-style. Solid surfaces, subtle borders,
+   one indigo accent, Inter typography. Works in light + dark.
+   To roll back: remove the `import "./styles/redesign.css"` line in main.jsx.
+   ========================================================================== */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  --ts-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --ts-bg: #f6f7fb;
+  --ts-surface: #ffffff;
+  --ts-surface-2: #f9fafc;
+  --ts-border: #e6e8f0;
+  --ts-border-strong: #d5d9e6;
+  --ts-text: #0f1222;
+  --ts-text-2: #4b5266;
+  --ts-text-3: #7b8298;
+
+  --ts-accent: #5b5bf0;
+  --ts-accent-hover: #4a4ae0;
+  --ts-accent-soft: rgba(91, 91, 240, 0.1);
+  --ts-accent-ring: rgba(91, 91, 240, 0.28);
+
+  --ts-todo: #7c83fd;
+  --ts-doing: #f59e0b;
+  --ts-done: #10b981;
+  --ts-danger: #ef4444;
+
+  --ts-radius-sm: 8px;
+  --ts-radius: 12px;
+  --ts-radius-lg: 16px;
+
+  --ts-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --ts-shadow-md: 0 4px 14px rgba(16, 24, 40, 0.07);
+  --ts-shadow-lg: 0 18px 40px rgba(16, 24, 40, 0.12);
+
+  /* Map the legacy tokens used across App.css onto the new palette */
+  --cb-bg: var(--ts-bg);
+  --cb-surface: var(--ts-surface);
+  --cb-surface-sunken: var(--ts-surface-2);
+  --cb-text: var(--ts-text);
+  --cb-text-secondary: var(--ts-text-2);
+  --cb-text-muted: var(--ts-text-3);
+  --cb-iris: var(--ts-accent);
+  --cb-iris-deep: var(--ts-accent-hover);
+  --cb-violet: var(--ts-accent);
+  --cb-link: var(--ts-accent);
+  --cb-card-bg: var(--ts-surface);
+  --cb-card-border: var(--ts-border);
+  --cb-topbar-bg: var(--ts-surface);
+  --cb-hover-tint: rgba(15, 18, 34, 0.04);
+  --cb-progress-track: #e8ebf3;
+  --cb-shadow-sm: var(--ts-shadow-sm);
+  --cb-shadow-md: var(--ts-shadow-md);
+  --cb-shadow-lg: var(--ts-shadow-lg);
+}
+
+[data-theme="dark"] {
+  --ts-bg: #0c0d14;
+  --ts-surface: #141622;
+  --ts-surface-2: #181a29;
+  --ts-border: #25283a;
+  --ts-border-strong: #333752;
+  --ts-text: #eef0f8;
+  --ts-text-2: #a5abc2;
+  --ts-text-3: #737a94;
+
+  --ts-accent: #7b7cff;
+  --ts-accent-hover: #9394ff;
+  --ts-accent-soft: rgba(123, 124, 255, 0.14);
+  --ts-accent-ring: rgba(123, 124, 255, 0.35);
+
+  --ts-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ts-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --ts-shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.6);
+
+  --cb-hover-tint: rgba(255, 255, 255, 0.05);
+  --cb-progress-track: #252839;
+}
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  font-family: var(--ts-font);
+  background: var(--ts-bg);
+  color: var(--ts-text);
+  letter-spacing: -0.005em;
+}
+
+button, input, select, textarea { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 2. Scoped page variables (dashboard / boards / board / my tasks / settings) ---------- */
+.dashv2, .bp2, .bv2,
+[data-theme="dark"] .dashv2, [data-theme="dark"] .bp2, [data-theme="dark"] .bv2 {
+  --dv-bg: var(--ts-bg);
+  --dv-frame-bg: transparent;
+  --dv-card-bg: var(--ts-surface);
+  --dv-border: var(--ts-border);
+  --dv-border-hover: var(--ts-accent-ring);
+  --dv-text: var(--ts-text);
+  --dv-text-dim: var(--ts-text-2);
+  --dv-text-dimmer: var(--ts-text-3);
+  --dv-accent: var(--ts-accent);
+  --dv-accent-2: var(--ts-accent);
+
+  --bp-bg: var(--ts-bg);
+  --bp-frame-bg: transparent;
+  --bp-card-bg: var(--ts-surface);
+  --bp-card-bg-hover: var(--ts-surface);
+  --bp-border: var(--ts-border);
+  --bp-border-hover: var(--ts-accent-ring);
+  --bp-text: var(--ts-text);
+  --bp-text-dim: var(--ts-text-2);
+  --bp-text-dimmer: var(--ts-text-3);
+  --bp-accent: var(--ts-accent);
+
+  --bv-bg: var(--ts-bg);
+  --bv-frame-bg: transparent;
+  --bv-card-bg: var(--ts-surface);
+  --bv-card-bg-hover: var(--ts-surface);
+  --bv-border: var(--ts-border);
+  --bv-border-hover: var(--ts-accent-ring);
+  --bv-text: var(--ts-text);
+  --bv-text-dim: var(--ts-text-2);
+  --bv-text-dimmer: var(--ts-text-3);
+  --bv-accent: var(--ts-accent);
+
+  background: var(--ts-bg);
+  color: var(--ts-text);
+}
+
+/* Drop the blurred photo, overlay and glow blobs */
+.dashv2-bg, .dashv2-bg-overlay, .dashv2-glow,
+.bp2-bg, .bp2-bg-overlay, .bp2-glow,
+.bv2-bg, .bv2-bg-overlay, .bv2-glow,
+.bp2-modal__card-bg, .bp2-modal__card-glow, .bp2-modal__card-overlay,
+.team-card__glow, .sidebar__bg {
+  display: none !important;
+}
+
+/* Frames: no more floating glass slab — content sits on the page */
+.dashv2-frame, .bp2-frame, .bv2-frame,
+[data-theme="dark"] .dashv2-frame, [data-theme="dark"] .bp2-frame, [data-theme="dark"] .bv2-frame {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  padding: 28px 32px 48px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .dashv2-frame, .bp2-frame, .bv2-frame { padding: 20px 16px 40px; }
+}
+
+/* ---------- 3. Top navigation ---------- */
+.hnav,
+[data-theme="light"] .hnav {
+  height: 60px;
+  background: color-mix(in srgb, var(--ts-surface) 86%, transparent);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--ts-border);
+  box-shadow: none;
+}
+
+.hnav__brand, [data-theme="light"] .hnav__brand { color: var(--ts-text); }
+
+.hnav__brand-badge {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #5b5bf0, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(91, 91, 240, 0.35);
+}
+
+.hnav__brand-text,
+[data-theme="light"] .hnav__brand-text {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--ts-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hnav__brand-tag {
+  background: var(--ts-accent-soft);
+  border: none;
+  color: var(--ts-accent);
+  border-radius: 6px;
+}
+
+.hnav__link, [data-theme="light"] .hnav__link {
+  color: var(--ts-text-2);
+  font-weight: 500;
+  font-size: 13.5px;
+  padding: 7px 12px;
+  border-radius: var(--ts-radius-sm);
+  border: 1px solid transparent;
+}
+
+.hnav__link:hover, [data-theme="light"] .hnav__link:hover {
+  color: var(--ts-text);
+  background: var(--cb-hover-tint);
+}
+
+.hnav__link--active,
+[data-theme="light"] .hnav__link--active {
+  color: var(--ts-accent) !important;
+  background: var(--ts-accent-soft) !important;
+  border: 1px solid transparent !important;
+  font-weight: 600;
+}
+
+.hnav__search, [data-theme="light"] .hnav__search {
+  background: var(--ts-surface-2);
+  border: 1px solid var(--ts-border);
+  color: var(--ts-text-3);
+  border-radius: 10px;
+  padding: 7px 12px;
+}
+.hnav__search:hover, [data-theme="light"] .hnav__search:hover {
+  background: var(--ts-surface);
+  border-color: var(--ts-border-strong);
+  color: var(--ts-text);
+}
+.hnav__search-kbd, [data-theme="light"] .hnav__search-kbd {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  color: var(--ts-text-3);
+  border-radius: 5px;
+}
+
+.hnav__btn, [data-theme="light"] .hnav__btn {
+  background: transparent;
+  border: 1px solid var(--ts-border);
+  color: var(--ts-text-2);
+  border-radius: 10px;
+}
+.hnav__btn:hover, [data-theme="light"] .hnav__btn:hover {
+  background: var(--cb-hover-tint);
+  border-color: var(--ts-border-strong);
+  color: var(--ts-text);
+}
+.hnav__badge { box-shadow: 0 0 0 2px var(--ts-surface); }
+
+/* ---------- 4. Page headings ---------- */
+.bv2-title, .dashv2-hero__title, .bp2-header__title, .team-page__titles h1, .mytasks-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ts-text);
+}
+.bv2-subtitle, .dashv2-hero__subtitle, .bp2-subtitle { color: var(--ts-text-2); font-size: 14px; }
+
+/* ---------- 5. Buttons ---------- */
+.dashv2-hero__btn,
+.bp2-modal__btn,
+.settings-btn,
+.settings-save-btn {
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 9px 16px;
+  box-shadow: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.dashv2-hero__btn--primary,
+.bp2-modal__btn--primary,
+.settings-btn--primary,
+.settings-save-btn {
+  background: var(--ts-accent);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(91, 91, 240, 0.35);
+}
+.dashv2-hero__btn--primary:hover,
+.bp2-modal__btn--primary:hover,
+.settings-btn--primary:hover,
+.settings-save-btn:hover {
+  background: var(--ts-accent-hover);
+  transform: none;
+  box-shadow: 0 2px 8px rgba(91, 91, 240, 0.35);
+  color: #fff;
+}
+
+.dashv2-hero__btn--ghost,
+[data-theme="dark"] .dashv2-hero__btn--ghost,
+.bp2-modal__btn--ghost,
+.settings-btn--ghost {
+  background: var(--ts-surface);
+  color: var(--ts-text);
+  border: 1px solid var(--ts-border-strong);
+}
+.dashv2-hero__btn--ghost:hover,
+[data-theme="dark"] .dashv2-hero__btn--ghost:hover,
+.bp2-modal__btn--ghost:hover,
+.settings-btn--ghost:hover {
+  background: var(--ts-surface-2);
+  color: var(--ts-text);
+  border-color: var(--ts-text-3);
+}
+
+/* ---------- 6. Inputs ---------- */
+.bp2-modal__input, .bp2-modal__textarea, .bp2-panel__input, .bp2-panel__textarea,
+.settings-field input, .settings-field select, .settings-field textarea,
+.team-search-input, .team-select-input {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border-strong);
+  border-radius: 10px;
+  color: var(--ts-text);
+  box-shadow: none;
+}
+.bp2-modal__input:focus, .bp2-modal__textarea:focus, .bp2-panel__input:focus, .bp2-panel__textarea:focus,
+.settings-field input:focus, .settings-field select:focus, .settings-field textarea:focus,
+.team-search-input:focus, .team-select-input:focus {
+  border-color: var(--ts-accent);
+  box-shadow: 0 0 0 3px var(--ts-accent-ring);
+  outline: none;
+}
+
+/* ---------- 7. Dashboard ---------- */
+.dashv2-hero,
+[data-theme="dark"] .dashv2-hero {
+  background: linear-gradient(135deg, var(--ts-accent-soft), transparent 70%), var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-sm);
+  backdrop-filter: none;
+  padding: 26px 30px;
+}
+.dashv2-hero__name { color: var(--ts-accent); }
+
+.dashv2-stat {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  box-shadow: var(--ts-shadow-sm);
+  backdrop-filter: none;
+  padding: 18px 20px;
+}
+.dashv2-stat:hover { border-color: var(--ts-border-strong); box-shadow: var(--ts-shadow-md); transform: none; }
+
+.dashv2-stat__icon {
+  width: 40px; height: 40px; border-radius: 10px; box-shadow: none;
+}
+.dashv2-stat--total .dashv2-stat__icon { background: var(--ts-accent-soft); color: var(--ts-accent); }
+.dashv2-stat--todo  .dashv2-stat__icon { background: rgba(124, 131, 253, 0.14); color: var(--ts-todo); }
+.dashv2-stat--doing .dashv2-stat__icon { background: rgba(245, 158, 11, 0.14);  color: var(--ts-doing); }
+.dashv2-stat--done  .dashv2-stat__icon { background: rgba(16, 185, 129, 0.14);  color: var(--ts-done); }
+
+.dashv2-stat__value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+.dashv2-stat__label { font-size: 12.5px; font-weight: 500; color: var(--ts-text-2); }
+
+.dashv2-panel,
+[data-theme="dark"] .dashv2-panel {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-sm);
+  backdrop-filter: none;
+  min-height: 360px;
+}
+.dashv2-panel__header,
+[data-theme="dark"] .dashv2-panel__header { border-bottom: 1px solid var(--ts-border); }
+.dashv2-panel__title { font-size: 14.5px; font-weight: 600; }
+.dashv2-panel__badge,
+[data-theme="dark"] .dashv2-panel__badge {
+  background: var(--ts-accent-soft); color: var(--ts-accent); border: none; font-weight: 600;
+}
+
+.dashv2-board-card, .dashv2-task-card,
+[data-theme="dark"] .dashv2-board-card, [data-theme="dark"] .dashv2-task-card {
+  background: var(--ts-surface-2);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.dashv2-board-card:hover, .dashv2-task-card:hover,
+[data-theme="dark"] .dashv2-board-card:hover, [data-theme="dark"] .dashv2-task-card:hover {
+  background: var(--ts-surface);
+  border-color: var(--ts-accent-ring);
+  box-shadow: var(--ts-shadow-md);
+}
+.dashv2-activity__item,
+[data-theme="dark"] .dashv2-activity__item { border-color: var(--ts-border); }
+
+/* ---------- 8. Boards list ---------- */
+.bv2-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-sm);
+  backdrop-filter: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.bv2-card:hover {
+  background: var(--ts-surface);
+  border-color: var(--ts-accent-ring);
+  box-shadow: var(--ts-shadow-md);
+  transform: translateY(-2px);
+}
+.bv2-card--selected { border-color: var(--ts-accent); box-shadow: 0 0 0 3px var(--ts-accent-ring); }
+.bv2-card--new { background: transparent; border: 1.5px dashed var(--ts-border-strong); box-shadow: none; }
+.bv2-card--new:hover { border-color: var(--ts-accent); background: var(--ts-accent-soft); transform: none; }
+.bv2-card__name { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---------- 9. Kanban board ---------- */
+.board { gap: 16px; }
+
+.board-column,
+.board-column:hover {
+  background: var(--ts-surface-2);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  padding: 14px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="dark"] .board-column { background: rgba(255, 255, 255, 0.02); }
+
+.board-column--drag-over {
+  background: var(--ts-accent-soft) !important;
+  border: 1.5px dashed var(--ts-accent) !important;
+  box-shadow: none !important;
+}
+
+.board-column__title { font-size: 13px; font-weight: 600; text-transform: none; }
+.board-column__count {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  color: var(--ts-text-2);
+  font-weight: 600;
+}
+.board-column__empty { border: 1.5px dashed var(--ts-border-strong); background: transparent; }
+.board-column__add-btn {
+  background: transparent;
+  border: 1.5px dashed var(--ts-border-strong);
+  color: var(--ts-text-2);
+}
+.board-column__add-btn:hover { background: var(--ts-accent-soft); border-color: var(--ts-accent); color: var(--ts-accent); }
+
+.bp2-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  box-shadow: var(--ts-shadow-sm);
+}
+.bp2-card:hover {
+  background: var(--ts-surface);
+  border-color: var(--ts-accent-ring);
+  box-shadow: var(--ts-shadow-md);
+}
+.bp2-card__title { font-weight: 600; font-size: 13.5px; }
+
+.bp2-header__progress-track { background: var(--cb-progress-track); border-radius: 99px; }
+.bp2-header__progress-fill { background: linear-gradient(90deg, var(--ts-accent), #8b5cf6); border-radius: 99px; }
+
+/* ---------- 10. Side panel + modals ---------- */
+.bp2-panel, .bp2-modal__card, .settings-card, [data-theme="dark"] .settings-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--ts-shadow-sm);
+}
+.bp2-modal__card, .bp2-panel { box-shadow: var(--ts-shadow-lg); }
+.bp2-modal-backdrop, .bp2-panel-backdrop { background: rgba(10, 12, 24, 0.5); backdrop-filter: blur(3px); }
+.settings-card:hover { border-color: var(--ts-border-strong); }
+.settings-card--danger { background: rgba(239, 68, 68, 0.06); border-color: rgba(239, 68, 68, 0.3); }
+
+.bp2-panel__status-btn { border-radius: 8px; border: 1px solid var(--ts-border-strong); background: var(--ts-surface); color: var(--ts-text-2); }
+.bp2-panel__status-btn--active { background: var(--ts-accent-soft); border-color: var(--ts-accent); color: var(--ts-accent); }
+
+/* ---------- 11. My Tasks + Team (were hard-coded dark glass) ---------- */
+.mytasks-header { border-bottom: 1px solid var(--ts-border); }
+.mytasks-stat-pill {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  backdrop-filter: none;
+  box-shadow: var(--ts-shadow-sm);
+}
+.mytasks-stat-pill__num { color: var(--ts-accent); }
+.mytasks-stat-pill__lbl { color: var(--ts-text-2); }
+
+.mytasks-group {
+  background: var(--ts-surface-2);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="dark"] .mytasks-group { background: rgba(255, 255, 255, 0.02); }
+.mytasks-group__title { color: var(--ts-text); font-weight: 600; }
+.mytasks-group__count {
+  color: var(--ts-text-2);
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+}
+
+.mytasks-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  box-shadow: var(--ts-shadow-sm);
+  color: var(--ts-text);
+}
+.mytasks-card:hover {
+  background: var(--ts-surface);
+  border-color: var(--ts-accent-ring);
+  box-shadow: var(--ts-shadow-md);
+}
+.mytasks-card__title { color: var(--ts-text); font-weight: 600; }
+.mytasks-card__desc, .mytasks-card__id { color: var(--ts-text-3); }
+.mytasks-card__board-pill { background: var(--ts-accent-soft); color: var(--ts-accent); border: none; }
+.mytasks-empty-box { background: var(--ts-surface); border: 1.5px dashed var(--ts-border-strong); border-radius: var(--ts-radius-lg); }
+
+.team-card,
+[data-theme="dark"] .team-card {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius-lg);
+  box-shadow: var(--ts-shadow-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.team-card:hover { border-color: var(--ts-accent-ring); box-shadow: var(--ts-shadow-md); transform: translateY(-2px); }
+.team-card__owner-badge { background: var(--ts-accent); }
+
+/* ---------- 12. Misc polish ---------- */
+.toast { border-radius: 12px; box-shadow: var(--ts-shadow-lg); }
+.cmdk, .modal { border-radius: var(--ts-radius-lg); box-shadow: var(--ts-shadow-lg); }
+
+::selection { background: var(--ts-accent-ring); }
+
+/* Thin, quiet scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--ts-border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--ts-border-strong); border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
