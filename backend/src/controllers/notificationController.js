@@ -3,7 +3,7 @@ import * as notificationService from "../services/notificationService.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 export const listMyNotifications = catchAsync(async (req, res) => {
-  const result = await notificationService.listMine(req.user.id);
+  const result = await notificationService.listMine(req.user.id, req.app.get("io"));
   res.json(result);
 });
 

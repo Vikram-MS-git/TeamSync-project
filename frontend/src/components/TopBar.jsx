@@ -174,6 +174,12 @@ function TopBar({ onOpenSearch }) {
                   >
                     <div className="topbar__notif-text">
                       {!n.read && <span className="topbar__notif-dot" aria-hidden="true" />}
+                      {n.type === "task_overdue" && (
+                        <span style={{ color: "#f87171", fontWeight: 700, marginRight: 6 }}>[Overdue]</span>
+                      )}
+                      {n.type === "deadline_upcoming" && (
+                        <span style={{ color: "#fbbf24", fontWeight: 700, marginRight: 6 }}>[Due Soon]</span>
+                      )}
                       {n.message}
                     </div>
                     <span className="topbar__notif-time">{timeAgo(n.createdAt)}</span>

@@ -12,9 +12,31 @@ const ITEM_VARIANTS = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 350, damping: 25 } },
 };
 
+function getDeadlineUrgency(dueDateStr, columnTitle) {
+  if (!dueDateStr || dueDateStr === "No date") return null;
+  if (columnTitle?.toLowerCase() === "done") return null;
+
+  let d = null;
+  if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(dueDateStr)) {
+    d = new Date(dueDateStr);
+  } else if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(dueDateStr)) {
+    d = new Date(`${dueDateStr} ${new Date().getFullYear()}`);
+  } else if (/\d/.test(dueDateStr)) {
+    d = new Date(dueDateStr);
+  }
+
+  if (!d || isNaN(d.getTime())) return null;
+
+  const now = Date.now();
+  if (d.getTime() < now) return "overdue";
+  if (d.getTime() - now <= 24 * 3600 * 1000) return "upcoming";
+  return null;
+}
+
 function TaskCard({ id, title, assignee, assigneeId, members, dueDate, columnTitle, onOpen, canDrag = true }) {
   const accent = STATUS_ACCENT[columnTitle] || "#8b6ff2";
   const member = members?.find((m) => m.id === assigneeId || m.name === assignee);
+  const urgency = getDeadlineUrgency(dueDate, columnTitle);
 
   function handleDragStart(e) {
     if (!canDrag) {
@@ -46,11 +68,29 @@ function TaskCard({ id, title, assignee, assigneeId, members, dueDate, columnTit
           <span className="bp2-card__status-dot" style={{ background: accent }} />
           <UserAvatar user={member} name={assignee} size={22} className="bp2-card__assignee" />
         </div>
-        <span className="bp2-card__due">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+        <span
+          className={`bp2-card__due ${
+            urgency === "overdue"
+              ? "bp2-card__due--overdue"
+              : urgency === "upcoming"
+              ? "bp2-card__due--upcoming"
+              : ""
+          }`}
+          style={{
+            color: urgency === "overdue" ? "#f87171" : urgency === "upcoming" ? "#fbbf24" : undefined,
+            fontWeight: urgency ? 600 : undefined,
+          }}
+        >
+          {urgency === "overdue" ? (
+            <span style={{ marginRight: 2 }}>⚠️</span>
+          ) : urgency === "upcoming" ? (
+            <span style={{ marginRight: 2 }}>⏰</span>
+          ) : (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          )}
           {dueDate}
         </span>
       </div>

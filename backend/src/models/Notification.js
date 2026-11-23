@@ -7,7 +7,7 @@ const { Schema } = mongoose;
 // already have their own accept/decline flow via the Invitation model,
 // and the bell renders those separately. This collection is for the
 // simpler "FYI" notifications: something happened, here's a link to it.
-const TYPES = ["task_assigned", "board_activity"];
+const TYPES = ["task_assigned", "board_activity", "deadline_upcoming", "task_overdue"];
 
 const notificationSchema = new Schema(
   {

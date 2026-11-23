@@ -4,6 +4,7 @@ import app from "./app.js";
 import { config } from "./config.js";
 import { connectDb } from "./db/connect.js";
 import { startWeeklySummaryJob } from "./jobs/weeklySummaryJob.js";
+import { startDeadlineAlertJob } from "./jobs/deadlineAlertJob.js";
 import { attachSockets } from "./sockets/index.js";
 
 // Express and Socket.IO share one HTTP server rather than listening on
@@ -21,6 +22,7 @@ connectDb(config.mongoUri)
       console.log(`API listening on http://localhost:${config.port}`);
     });
     startWeeklySummaryJob();
+    startDeadlineAlertJob(io);
   })
   .catch((err) => {
     console.error("Failed to connect to MongoDB:", err.message);

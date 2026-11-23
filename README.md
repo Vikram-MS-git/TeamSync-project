@@ -42,7 +42,7 @@ TeamSync is built around eight foundational features. The current implementation
 | 1 | **Live Kanban Board** | **Implemented** | Interactive drag-and-drop task board with instant updates across all active team members via Socket.IO and live presence tracking. |
 | 2 | **Team Chat** | **Implemented** | Real-time project-wise communication via Socket.IO (`chat:message`), REST fallback (`/api/boards/:id/chat`), persistent MongoDB history, unread message badges, and responsive sliding drawer UI. |
 | 3 | **Smart Task Assignment** | **Implemented** | Workload recommendation engine analyzing active/pending tasks per member (`/api/boards/:id/smart-assignment`), auto-selecting lowest-workload members with visual UI recommendation badges. |
-| 4 | **Deadline Alerts** | **Partially Implemented (Phase 2)** | Task scheduling with due dates/times, overdue tracking, background summary cron job, and email notification service. |
+| 4 | **Deadline Alerts** | **Implemented** | Automated deadline checking engine, upcoming deadline alerts (<24h), overdue task alerts, in-app bell notifications, and real-time visual urgency badges on Kanban cards. |
 | 5 | **Workload Analytics** | **Planned (Phase 3)** | Comprehensive visual reports and charts displaying employee productivity, task distribution, and velocity. |
 | 6 | **File Sharing** | **Partially Implemented (Phase 3)** | Cloudinary and Multer integration pipeline for uploading documents and attaching assets to tasks. |
 | 7 | **Conflict Resolution** | **Implemented** | Optimistic concurrency control (OCC) using strict integer versioning (`409 Conflict`), featuring an interactive conflict-resolution modal. |

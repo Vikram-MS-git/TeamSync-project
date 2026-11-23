@@ -28,6 +28,26 @@ function TaskDetailPanel({ taskId, onClose, isOwner, currentUserId, members = []
 
   const board = boards.find((b) => b.id === task.boardId);
   const columns = getColumns(board);
+  const currentColumn = columns.find((c) => c.id === task.columnId);
+  const isDone = currentColumn?.title?.toLowerCase() === "done";
+
+  // Calculate deadline urgency
+  let urgency = null;
+  if (task.dueDate && task.dueDate !== "No date" && !isDone) {
+    let d = null;
+    if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(task.dueDate)) {
+      d = new Date(task.dueDate);
+    } else if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(task.dueDate)) {
+      d = new Date(`${task.dueDate} ${new Date().getFullYear()}`);
+    } else if (/\d/.test(task.dueDate)) {
+      d = new Date(task.dueDate);
+    }
+    if (d && !isNaN(d.getTime())) {
+      const now = Date.now();
+      if (d.getTime() < now) urgency = "overdue";
+      else if (d.getTime() - now <= 24 * 3600 * 1000) urgency = "upcoming";
+    }
+  }
 
   const isAssignee = task.assigneeId === currentUserId;
   const canMove = isOwner || isAssignee;
@@ -78,6 +98,48 @@ function TaskDetailPanel({ taskId, onClose, isOwner, currentUserId, members = []
             </svg>
           </button>
         </div>
+
+        {urgency === "overdue" && (
+          <div
+            style={{
+              background: "rgba(239, 68, 68, 0.15)",
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+              color: "#f87171",
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: 12,
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontWeight: 500,
+            }}
+          >
+            <span>⚠️</span>
+            <span>Overdue Task: Due date was {task.dueDate}. Needs immediate attention.</span>
+          </div>
+        )}
+
+        {urgency === "upcoming" && (
+          <div
+            style={{
+              background: "rgba(245, 158, 11, 0.15)",
+              border: "1px solid rgba(245, 158, 11, 0.35)",
+              color: "#fbbf24",
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: 12,
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontWeight: 500,
+            }}
+          >
+            <span>⏰</span>
+            <span>Upcoming Deadline: Due soon ({task.dueDate}).</span>
+          </div>
+        )}
 
         <input
           className="bp2-panel__title"

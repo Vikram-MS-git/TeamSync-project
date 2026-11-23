@@ -57,6 +57,10 @@ export function attachSockets(httpServer, config) {
   }
 
   io.on("connection", (socket) => {
+    // Join a user-specific room for real-time private notifications
+    if (socket.user?.id) {
+      socket.join("user:" + socket.user.id);
+    }
     socket.on("board:join", async (boardId) => {
       if (typeof boardId !== "string" || !boardId.trim()) return;
 
